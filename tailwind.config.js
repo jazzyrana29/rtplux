@@ -6,6 +6,7 @@ module.exports = {
     "./games/**/*.{js,jsx,ts,tsx}",
     "*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: 'class',
   presets: [require("nativewind/preset")],
   theme: {
     extend: {

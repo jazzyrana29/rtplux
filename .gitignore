@@ -39,3 +39,9 @@ yarn-error.*
 # IDE
 .vscode/
 .idea/
+
+#public assets
+public/assets/games
+
+#any zip
+*.zip
