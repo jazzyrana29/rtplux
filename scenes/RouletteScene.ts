@@ -1,4 +1,5 @@
 // File: scenes/RouletteScene.ts
+
 import Phaser from 'phaser';
 import { credit, debit, getBalance } from '../services/wallet';
 import { initRNG } from '../services/rng';
@@ -15,55 +16,83 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   preload(): void {
-    // Atlases
+    // Multipage atlas: load both pages for rouletteSprites
     this.load.atlas(
       'rouletteSprites',
-      'assets/games/roulette/roulette.webp',
-      'assets/games/roulette/roulette.json'
+      require('../public/assets/games/roulette/roulette-0.webp'),
+      require('../public/assets/games/roulette/roulette-0.json')
     );
+    this.load.atlas(
+      'rouletteSprites',
+      require('..public/assets/games/roulette/roulette-1.webp'),
+      require('../public/assets/games/roulette/roulette-1.json')
+    );
+    //
+    // Chips atlas (likely single page)
     this.load.atlas(
       'chipsAtlas',
-      'assets/games/roulette/chips.webp',
-      'assets/games/roulette/chips.json'
+      require('../public/assets/games/roulette/chips.webp'),
+      require('../assets/games/roulette/chips.json')
     );
+    //
     // Single images
-    this.load.image('tableBg', 'assets/games/roulette/tableBg.webp');
-    this.load.image('spinButton', 'assets/games/roulette/spin_button.webp');
-    this.load.atlas(
-      'iconsAtlas',
-      'assets/games/roulette/icons.webp',
-      'assets/games/roulette/icons.json'
+    this.load.image(
+      'tableBg',
+      require('../public/assets/games/roulette/tableBg.webp')
     );
-    // Confetti
+    this.load.image(
+      'spinButton',
+      require('../public/assets/games/roulette/spin_button.webp')
+    );
+
+    // Confetti (multipage example)
     this.load.atlas(
       'confetti',
-      'assets/games/roulette/confetti.webp',
-      'assets/games/roulette/confetti.json'
+      require('assets/games/roulette/confetti_frames-0.webp'),
+      require('assets/games/roulette/confetti_frames-0.json')
     );
-    // Digits
+    this.load.atlas(
+      'confetti',
+      require('assets/games/roulette/confetti_frames-1.webp'),
+      require('assets/games/roulette/confetti_frames-1.json')
+    );
+
+    // Digits atlas
     this.load.atlas(
       'digitAtlas',
-      'assets/games/roulette/casino_digits_sprite_sheet.webp',
-      'assets/games/roulette/casino_digits_sprite_sheet.json'
+      require('assets/games/roulette/casino_digits_pngs.webp'),
+      require('assets/games/roulette/casino_digits_pngs.json')
     );
+
     // Audio
-    this.load.audio('sfxSpin', 'assets/games/roulette/roulette_spin.mp3');
-    this.load.audio('sfxDrop', 'assets/games/roulette/ball_drop_click.mp3');
-    this.load.audio('sfxWin', 'assets/games/roulette/payout_jingle.mp3');
+    this.load.audio(
+      'sfxSpin',
+      require('../assets/games/roulette/audio/roulette_spin.mp3')
+    );
+    this.load.audio(
+      'sfxDrop',
+      require('assets/games/roulette/audio/ball_drop_click.mp3')
+    );
+    this.load.audio(
+      'sfxWin',
+      require('assets/games/roulette/audio/payout_jingle.mp3')
+    );
   }
 
   async create(): Promise<void> {
-    // Background\
     this.add.image(400, 300, 'tableBg');
-    // Wheel
-    this.wheel = this.add.sprite(400, 300, 'rouletteSprites', 'wheel_0');
-    this.wheel.setOrigin(0.5);
-    // Chips sample
+    this.wheel = this.add
+      .sprite(400, 300, 'rouletteSprites', 'wheel_0')
+      .setOrigin(0.5);
+
+    // Sample chips
     this.add.image(650, 500, 'chipsAtlas', 'chip_1');
     this.add.image(700, 500, 'chipsAtlas', 'chip_5');
+
     // Spin button
     this.button = this.add.image(400, 550, 'spinButton').setInteractive();
     this.button.on('pointerup', () => this.handleSpin());
+
     // Confetti animation
     this.anims.create({
       key: 'confettiBurst',
@@ -76,7 +105,8 @@ export default class RouletteScene extends Phaser.Scene {
       frameRate: 60,
       repeat: 0,
     });
-    // Balance text
+
+    // Balance display
     this.balanceText = this.add.text(50, 50, 'Balance: ...', {
       font: '20px Arial',
       color: '#ffffff',
@@ -85,7 +115,7 @@ export default class RouletteScene extends Phaser.Scene {
     this.balanceText.setText(`Balance: ${bal.balance}`);
   }
 
-  update(time: number, delta: number): void {
+  update(): void {
     // future updates
   }
 
@@ -94,33 +124,26 @@ export default class RouletteScene extends Phaser.Scene {
     this.isSpinning = true;
     this.button.disableInteractive();
 
-    // Debit bet
     const debitRes = await debit(this.betAmount);
     if (!debitRes.success) {
       console.error('Debit failed');
-      this.resetSpin();
-      return;
+      return this.resetSpin();
     }
     this.balanceText.setText(`Balance: ${debitRes.balance}`);
 
-    // Init RNG
-    const { seed, hash } = await initRNG('roulette');
-    // Determine outcome (dummy): parse seed
+    const { seed } = await initRNG('roulette');
     const outcomeNum = parseInt(seed.slice(-2), 36) % 37;
     const segmentAngle = 360 / 37;
     const rotations = 5;
     const finalAngle = 360 * rotations + outcomeNum * segmentAngle;
 
-    // Play spin sound
     this.sound.play('sfxSpin');
-    // Animate wheel
     this.tweens.add({
       targets: this.wheel,
       angle: finalAngle,
       duration: 4000,
       ease: 'Cubic.easeOut',
       onComplete: async () => {
-        // Determine payout: dummy rule (odd numbers pay 2x)
         let payout = 0;
         if (outcomeNum !== 0 && outcomeNum % 2 === 1) {
           payout = this.betAmount * 2;
@@ -140,7 +163,6 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   private showOutcome(num: number): void {
-    // Display outcome digits
     const str = num.toString().padStart(2, '0');
     str.split('').forEach((d, i) => {
       this.add.image(300 + i * 32, 100, 'digitAtlas', `digit_${d}`);
