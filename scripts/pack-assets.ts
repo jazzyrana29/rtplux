@@ -1,108 +1,141 @@
 #!/usr/bin/env ts-node
 
-// File: scripts/pack-assets.ts
-
 import {
+  copyFileSync,
   mkdirSync,
-  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from 'fs';
-import { basename, extname, join, relative } from 'path';
+import { basename, dirname, extname, join, relative } from 'path';
+import glob from 'fast-glob';
 import sharp from 'sharp';
-
 import FreeTexPacker, { PackerExporterType } from 'free-tex-packer-core';
 
-// Source and output roots
+interface AtlasRule {
+  name: string;
+  sources: string[];
+  multiPage?: boolean;
+  maxSize?: number;
+}
+
+interface Recipe {
+  atlases: AtlasRule[];
+  singles?: string[];
+  audio?: string[];
+}
+
 const SRC_ROOT = join(__dirname, '..', 'assets', 'games');
 const OUT_ROOT = join(__dirname, '..', 'public', 'assets', 'games');
 
-/**
- * Clean the entire output folder
- */
 function cleanOutput() {
   rmSync(OUT_ROOT, { recursive: true, force: true });
   console.log(`🗑️ Cleared ${OUT_ROOT}`);
 }
 
-/**
- * Recursively pack or convert each game folder
- */
-async function processDir(srcDir: string) {
-  const relPath = relative(SRC_ROOT, srcDir);
-  const destDir = join(OUT_ROOT, relPath);
+async function buildGame(game: string, recipe: Recipe) {
+  const srcDir = join(SRC_ROOT, game);
+  const destDir = join(OUT_ROOT, game);
+  mkdirSync(destDir, { recursive: true });
+  console.log(`\n🎮 Packing "${game}"…`);
 
-  const entries = readdirSync(srcDir, { withFileTypes: true });
-  const pngFiles = entries
-    .filter((e) => e.isFile() && extname(e.name).toLowerCase() === '.png')
-    .map((e) => e.name);
-  const subDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+  // 1) Atlases
+  for (const rule of recipe.atlases) {
+    const matches = await glob(rule.sources, { cwd: srcDir });
+    if (matches.length === 0) {
+      console.warn(
+        `⚠️  [${game}] no files matched for atlas "${rule.name}".\n` +
+          `    patterns: ${rule.sources.join(', ')}`
+      );
+      continue;
+    }
 
-  if (pngFiles.length > 1) {
-    console.log(`📦 Packing atlas '${relPath}' with ${pngFiles.length} PNGs`);
-    mkdirSync(destDir, { recursive: true });
-
-    // Prepare buffers for the packer
-    const files = pngFiles.map((name) => ({
-      path: name,
-      contents: readFileSync(join(srcDir, name)),
+    console.log(`📦 [${game}] atlas "${rule.name}" (${matches.length} files)`);
+    const files = matches.map((p) => ({
+      path: p,
+      contents: readFileSync(join(srcDir, p)),
     }));
-    const atlasBase = basename(relPath) || 'root';
+
     const config = {
-      textureName: atlasBase,
-      dataFile: `${atlasBase}.json`,
-      width: 2048,
-      height: 2048,
+      textureName: rule.name,
+      dataFile: `${rule.name}.json`,
+      width: rule.maxSize || 2048,
+      height: rule.maxSize || 2048,
       fixedSize: false,
       padding: 2,
       allowRotation: false,
       detectIdentical: true,
       allowTrim: true,
       exporter: 'Phaser3' as PackerExporterType,
+      multipack: rule.multiPage || false,
     };
 
     const exported: Array<{ name: string; buffer: Buffer }> = [];
     await new Promise<void>((resolve, reject) => {
-      FreeTexPacker(files, config, (results: any, err: Error | undefined) => {
+      FreeTexPacker(files, config, (results, err) => {
         if (err) return reject(err);
         exported.push(...results);
         resolve();
       });
     });
 
-    // Write out pages and convert each to WebP
+    // write out pages + WebP conversions
     for (const file of exported) {
       const outPath = join(destDir, file.name);
       writeFileSync(outPath, file.buffer);
-      console.log(`✏️ Wrote ${relative(process.cwd(), outPath)}`);
-      if (/\.png$/i.test(file.name)) {
-        const webpName = file.name.replace(/\.png$/i, '.webp');
-        const webpPath = join(destDir, webpName);
+      console.log(`   ✏️  wrote ${relative(process.cwd(), outPath)}`);
+      if (file.name.toLowerCase().endsWith('.png')) {
+        const webpPath = outPath.replace(/\.png$/i, '.webp');
         await sharp(file.buffer).toFormat('webp').toFile(webpPath);
-        console.log(`🔄 Converted ${file.name} → ${webpName}`);
+        console.log(`   🔄  converted → ${basename(webpPath)}`);
       }
     }
-  } else if (pngFiles.length === 1) {
-    // Single PNG: convert directly
-    const name = pngFiles[0];
-    console.log(`🔄 Converting single '${relPath}/${name}'`);
-    mkdirSync(destDir, { recursive: true });
-    const buffer = readFileSync(join(srcDir, name));
-    const webpPath = join(destDir, `${basename(name, '.png')}.webp`);
-    await sharp(buffer).toFormat('webp').toFile(webpPath);
-    console.log(`✅ Converted to ${relative(process.cwd(), webpPath)}`);
   }
 
-  // Recurse
-  for (const sub of subDirs) {
-    await processDir(join(srcDir, sub));
+  // 2) Stand-alone images → WebP
+  for (const pattern of recipe.singles || []) {
+    const imgs = await glob(pattern, { cwd: srcDir });
+    for (const rel of imgs) {
+      const src = join(srcDir, rel);
+      const dstDir = join(destDir, dirname(rel));
+      mkdirSync(dstDir, { recursive: true });
+      const dst = join(dstDir, basename(rel, extname(rel)) + '.webp');
+      await sharp(src).toFormat('webp').toFile(dst);
+      console.log(`✅ [${game}] single→WebP ${relative(process.cwd(), dst)}`);
+    }
+  }
+
+  // 3) Audio copy
+  for (const pattern of recipe.audio || []) {
+    const tracks = await glob(pattern, { cwd: srcDir });
+    for (const rel of tracks) {
+      const src = join(srcDir, rel);
+      const dstDir = join(destDir, dirname(rel));
+      mkdirSync(dstDir, { recursive: true });
+      const dst = join(dstDir, basename(rel));
+      copyFileSync(src, dst);
+      console.log(`🔊 [${game}] copied audio ${relative(process.cwd(), dst)}`);
+    }
   }
 }
 
-// Entry point
 (async () => {
   cleanOutput();
-  await processDir(SRC_ROOT);
-  console.log('✅ All assets packed & optimized under public/assets/games');
+
+  // find every pack.recipe.json under assets/games/<game>/
+  const recipes = await glob('*/pack.recipe.json', { cwd: SRC_ROOT });
+  if (recipes.length === 0) {
+    console.error(`❌ No pack.recipe.json files found in ${SRC_ROOT}`);
+    process.exit(1);
+  }
+
+  for (const rel of recipes) {
+    const game = rel.split('/')[0];
+    const recipePath = join(SRC_ROOT, rel);
+    console.log(`\n📖 Loading recipe for "${game}" from ${recipePath}`);
+    const recipe: Recipe = JSON.parse(readFileSync(recipePath, 'utf8'));
+    await buildGame(game, recipe);
+  }
+
+  console.log('\n✅ All assets packed & optimized under public/assets/games');
 })();

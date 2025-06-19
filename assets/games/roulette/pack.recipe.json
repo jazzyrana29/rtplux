@@ -1,0 +1,35 @@
+{
+  "atlases": [
+    {
+      "name": "rouletteSprites",
+      "sources": [
+        "sprite.png",
+        "chips.png",
+        "icons.png"
+      ],
+      "multiPage": false,
+      "maxSize": 2048
+    },
+    {
+      "name": "confetti",
+      "sources": [
+        "confetti_frames/*.png"
+      ],
+      "multiPage": false
+    },
+    {
+      "name": "digitAtlas",
+      "sources": [
+        "casino_digits_pngs/*.png"
+      ],
+      "multiPage": false
+    }
+  ],
+  "singles": [
+    "tableBg.png",
+    "spin_button.png"
+  ],
+  "audio": [
+    "audio/*.mp3"
+  ]
+}

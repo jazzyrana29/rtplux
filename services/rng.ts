@@ -1,18 +1,10 @@
-// File: services/rng.ts
-export async function initRNG(
-  game: string
-): Promise<{ seed: string; hash: string }> {
-  // generate a pseudo-random seed
-  const seed = Math.random().toString(36).slice(2);
-  // compute a simple hash (for demo purposes)
-  let hash = '';
-  for (let i = 0; i < seed.length; i++) {
-    hash += seed.charCodeAt(i).toString(16);
-  }
-  return { seed, hash };
+// Mock RNG service
+export interface RNGResponse {
+  seed: string;
 }
 
-export function verifyProof(seed: string, hash: string): boolean {
-  // Always true in dummy implementation
-  return true;
+export async function initRNG(game: string): Promise<RNGResponse> {
+  // Generate a random seed
+  const seed = Math.random().toString(36).substring(2, 15);
+  return { seed };
 }

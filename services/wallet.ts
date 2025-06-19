@@ -1,21 +1,29 @@
-// File: services/wallet.ts
+// Mock wallet service
+export interface WalletResponse {
+  success: boolean;
+  balance: number;
+  message?: string;
+}
+
+let currentBalance = 1000;
+
 export async function getBalance(): Promise<{ balance: number }> {
-  // dummy starting balance
-  return { balance: 1000 };
+  return { balance: currentBalance };
 }
 
-export async function debit(
-  amount: number
-): Promise<{ success: boolean; balance: number }> {
-  // simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  // always succeed for now
-  return { success: true, balance: 1000 - amount };
+export async function debit(amount: number): Promise<WalletResponse> {
+  if (currentBalance >= amount) {
+    currentBalance -= amount;
+    return { success: true, balance: currentBalance };
+  }
+  return {
+    success: false,
+    balance: currentBalance,
+    message: 'Insufficient funds',
+  };
 }
 
-export async function credit(
-  amount: number
-): Promise<{ success: boolean; balance: number }> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { success: true, balance: 1000 + amount };
+export async function credit(amount: number): Promise<WalletResponse> {
+  currentBalance += amount;
+  return { success: true, balance: currentBalance };
 }
