@@ -4,38 +4,40 @@ import Phaser from 'phaser';
 import { credit, debit, getBalance } from '../services/wallet';
 import { initRNG } from '../services/rng';
 
-type Bet = {
-  number: number;
-  amount: number;
-  sprite: Phaser.GameObjects.Image;
-};
-
-const CELL_WIDTH = 80;
-const CELL_HEIGHT = 40;
+type Bet = { number: number; denom: number; sprite: Phaser.GameObjects.Image };
 
 export default class RouletteScene extends Phaser.Scene {
-  private wheel!: Phaser.GameObjects.Sprite | Phaser.GameObjects.Graphics;
-  private spinBtn!: Phaser.GameObjects.Image;
-  private clearBtn!: Phaser.GameObjects.Text;
+  // Text & sound refs
   private balanceText!: Phaser.GameObjects.Text;
   private outcomeText!: Phaser.GameObjects.Text;
   private spinSound!: Phaser.Sound.BaseSound;
   private dropSound!: Phaser.Sound.BaseSound;
   private payoutSound!: Phaser.Sound.BaseSound;
-  private isSpinning = false;
 
-  // betting state
+  // Betting state
+  private chipCounts: Record<number, number> = { 1: 0, 5: 0, 25: 0, 100: 0 };
   private selectedDenom = 1;
   private chipImages: Record<number, Phaser.GameObjects.Image> = {};
   private bets: Bet[] = [];
+
+  // Layout metrics
+  private tableX!: number;
+  private tableY!: number;
+  private tableW!: number;
+  private tableH!: number;
+  private cellW!: number;
+  private cellH!: number;
 
   constructor() {
     super({ key: 'RouletteScene' });
   }
 
   preload(): void {
-    // ── Background, button, wheel & confetti ─────────────────────
-    this.load.image('tableBg', '/public/assets/games/roulette/tableBg.webp');
+    this.load.atlas(
+      'chips',
+      '/public/assets/games/roulette/chips.png',
+      '/public/assets/games/roulette/chips.json'
+    );
     this.load.image(
       'spinButton',
       '/public/assets/games/roulette/spin_button.webp'
@@ -50,15 +52,6 @@ export default class RouletteScene extends Phaser.Scene {
       '/public/assets/games/roulette/confetti-0.webp',
       '/public/assets/games/roulette/confetti-0.json'
     );
-
-    // ── NEW: single atlas for all four chip graphics ─────────────
-    this.load.atlas(
-      'chips',
-      '/public/assets/games/roulette/chips.png',
-      '/public/assets/games/roulette/chips.json'
-    );
-
-    // ── Audio ────────────────────────────────────────────────────
     this.load.audio(
       'spinSound',
       '/public/assets/games/roulette/audio/roulette_spin.mp3'
@@ -79,61 +72,38 @@ export default class RouletteScene extends Phaser.Scene {
     this.dropSound = this.sound.add('dropSound');
     this.payoutSound = this.sound.add('payoutSound');
 
-    // ── Table background & wheel ────────────────────────────────
-    this.add.image(400, 300, 'tableBg').setDisplaySize(800, 600);
-    if (this.textures.exists('rouletteSprites')) {
-      this.wheel = this.add
-        .sprite(400, 300, 'rouletteSprites', 'sprite.png')
-        .setOrigin(0.5)
-        .setDisplaySize(360, 360);
-    } else {
-      this.createFallbackWheel();
-    }
+    // ── Draw the table and record metrics ────────────────────────
+    this.drawTable();
 
-    // ── Balance display ─────────────────────────────────────────
+    // ── Show balance & ask to buy $1 chips ───────────────────────
     const bal = await getBalance();
     this.balanceText = this.add
-      .text(20, 20, `Balance: $${bal.balance}`, {
+      .text(this.tableX, this.tableY - 40, `Balance: $${bal.balance}`, {
         fontSize: '24px',
         color: '#ffffff',
         fontStyle: 'bold',
       })
-      .setShadow(2, 2, '#000000', 2);
+      .setShadow(2, 2, '#000', 2);
+    await this.buyChips(bal.balance);
 
-    // ── Chip palette (load from new 'chips' atlas) ──────────────
-    this.drawChipPalette();
-
-    // ── Clear Bets button ───────────────────────────────────────
-    this.clearBtn = this.add
-      .text(700, 20, '[Clear Bets]', {
-        fontSize: '18px',
-        color: '#ff4444',
-        fontStyle: 'bold',
-      })
-      .setInteractive({ cursor: 'pointer' })
-      .on('pointerup', () => this.clearAllBets());
-
-    // ── Spin button ─────────────────────────────────────────────
-    this.spinBtn = this.add
-      .image(400, 530, 'spinButton')
-      .setDisplaySize(160, 60)
-      .setInteractive({ cursor: 'pointer' })
-      .on('pointerup', () => this.handleSpin());
-
-    // ── Outcome text ────────────────────────────────────────────
+    // ── Outcome text (centered above table) ─────────────────────
     this.outcomeText = this.add
-      .text(400, 150, '', {
-        fontSize: '48px',
+      .text(this.scale.width / 2, this.tableY - 40, '', {
+        fontSize: '32px',
         color: '#ffff00',
         fontStyle: 'bold',
       })
-      .setOrigin(0.5)
-      .setShadow(2, 2, '#000000', 2);
+      .setOrigin(0.5);
 
-    // ── Enable betting on each number‐cell ──────────────────────
+    // ── Draw controls: chips, withdraw, spin ────────────────────
+    this.drawChipPalette();
+    this.drawWithdraw();
+    this.createSpinButton();
+
+    // ── Enable betting by clicking cells ────────────────────────
     this.enableTableBetting();
 
-    // ── Confetti animation setup ────────────────────────────────
+    // ── Prepare confetti animation ──────────────────────────────
     if (this.textures.exists('confetti')) {
       this.anims.create({
         key: 'confettiBurst',
@@ -150,173 +120,256 @@ export default class RouletteScene extends Phaser.Scene {
     }
   }
 
-  private drawChipPalette() {
-    const denominations = [1, 5, 25, 100];
-    const y = 550;
-    denominations.forEach((d, i) => {
-      const x = 150 + i * 120;
-      const img = this.add
-        .image(x, y, 'chips', `chip_${d}.png`)
-        .setDisplaySize(64, 64)
-        .setInteractive({ cursor: 'pointer' })
-        .on('pointerup', () => this.selectChip(d));
-
-      this.chipImages[d] = img;
-
-      // label below
-      this.add
-        .text(x, y + 40, `$${d}`, {
-          fontSize: '16px',
-          color: '#ffffff',
-          fontStyle: 'bold',
-        })
-        .setOrigin(0.5);
-
-      if (i === 0) this.selectChip(d);
-    });
+  private async buyChips(balance: number) {
+    const qtyStr =
+      prompt(`You have $${balance}. How many $1 chips to buy?`, `${balance}`) ||
+      '0';
+    const qty = Math.min(Math.max(parseInt(qtyStr, 10) || 0, 0), balance);
+    if (qty > 0) {
+      const dr = await debit(qty);
+      this.balanceText.setText(`Balance: $${dr.balance}`);
+      this.chipCounts[1] = qty;
+    }
   }
 
-  private selectChip(denom: number) {
-    this.selectedDenom = denom;
-    // clear all tints
-    Object.values(this.chipImages).forEach((img) => img.clearTint());
-    // highlight selected
-    this.chipImages[denom].setTint(0x00ff00);
+  private drawTable() {
+    const { width, height } = this.scale;
+    // 80% width, 60% height, centered
+    this.tableW = width * 0.8;
+    this.tableH = height * 0.6;
+    this.tableX = (width - this.tableW) / 2;
+    this.tableY = (height - this.tableH) / 2;
+    this.cellW = this.tableW / 3;
+    this.cellH = this.tableH / 13; // 1 row for zero + 12 rows of three
+
+    const g = this.add.graphics().lineStyle(2, 0xffffff);
+
+    // Zero row
+    g.strokeRect(this.tableX, this.tableY, this.tableW, this.cellH);
+    this.add
+      .text(this.tableX + this.tableW / 2, this.tableY + this.cellH / 2, '0', {
+        fontSize: '20px',
+        color: '#fff',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
+
+    // Rows 1–36
+    for (let n = 1; n <= 36; n++) {
+      const row = Math.floor((n - 1) / 3);
+      const col = (n - 1) % 3;
+      const x = this.tableX + col * this.cellW;
+      const y = this.tableY + this.cellH + row * this.cellH;
+      g.strokeRect(x, y, this.cellW, this.cellH);
+      this.add
+        .text(x + this.cellW / 2, y + this.cellH / 2, `${n}`, {
+          fontSize: '18px',
+          color: '#fff',
+        })
+        .setOrigin(0.5);
+    }
   }
 
   private enableTableBetting() {
-    const centerX = this.cameras.main.width / 2;
-    const centerY = this.cameras.main.height / 2;
-    const startX = centerX - CELL_WIDTH;
-    const startY = centerY - (12 * CELL_HEIGHT) / 2 + CELL_HEIGHT / 2;
-
-    // zero cell
+    // Zero cell
     this.add
       .rectangle(
-        centerX,
-        startY - CELL_HEIGHT,
-        CELL_WIDTH * 3,
-        CELL_HEIGHT,
+        this.tableX + this.tableW / 2,
+        this.tableY + this.cellH / 2,
+        this.tableW,
+        this.cellH,
         0,
         0
       )
       .setInteractive({ cursor: 'pointer' })
-      .on('pointerup', () => this.placeBet(0, centerX, startY - CELL_HEIGHT));
+      .on('pointerup', () =>
+        this.placeBet(
+          0,
+          this.tableX + this.tableW / 2,
+          this.tableY + this.cellH / 2
+        )
+      );
 
-    // 1–36 grid
+    // 1–36 cells
     for (let n = 1; n <= 36; n++) {
       const row = Math.floor((n - 1) / 3);
       const col = (n - 1) % 3;
-      const x = startX + col * CELL_WIDTH;
-      const y = startY + row * CELL_HEIGHT;
-
+      const x = this.tableX + col * this.cellW + this.cellW / 2;
+      const y = this.tableY + this.cellH + row * this.cellH + this.cellH / 2;
       this.add
-        .rectangle(x, y, CELL_WIDTH, CELL_HEIGHT, 0, 0)
+        .rectangle(x, y, this.cellW, this.cellH, 0, 0)
         .setInteractive({ cursor: 'pointer' })
         .on('pointerup', () => this.placeBet(n, x, y));
     }
   }
 
   private async placeBet(num: number, x: number, y: number) {
-    const denom = this.selectedDenom;
-    // debit stake
-    const dr = await debit(denom);
-    if (!dr.success) {
-      this.outcomeText.setText('Insufficient funds!');
+    if (this.chipCounts[this.selectedDenom] <= 0) {
+      this.outcomeText.setText(`No $${this.selectedDenom} chips left!`);
       return;
     }
-    this.balanceText.setText(`Balance: $${dr.balance}`);
+    this.chipCounts[this.selectedDenom]--;
+    this.updateChipPalette();
 
-    // show chip on board
+    // bottom row has 5 equal segments
+    const segments = 5;
+    const segW = this.tableW / segments;
+    // icon size = 60% of segment width
+    const iconSize = segW * 0.6;
+
     const sprite = this.add
-      .image(x, y, 'chips', `chip_${denom}.png`)
-      .setDisplaySize(32, 32);
-
-    this.bets.push({ number: num, amount: denom, sprite });
+      .image(x, y, 'chips', `chip${this.selectedDenom}.png`)
+      .setDisplaySize(iconSize, iconSize);
+    this.bets.push({ number: num, denom: this.selectedDenom, sprite });
   }
 
-  private async clearAllBets() {
-    if (this.bets.length === 0) {
-      this.outcomeText.setText('No bets to clear.');
+  private drawChipPalette() {
+    const denoms = [1, 5, 25, 100];
+    const segments = 5; // 4 chips + SPIN
+    const segW = this.tableW / segments;
+    const y = this.tableY + this.tableH + this.cellH * 1.5;
+    const iconSize = segW * 0.6;
+
+    denoms.forEach((d, i) => {
+      const x = this.tableX + segW * (i + 0.5);
+      const img = this.add
+        .image(x, y, 'chips', `chip${d}.png`)
+        .setDisplaySize(iconSize, iconSize)
+        .setInteractive({ cursor: 'pointer' })
+        .on('pointerup', () => this.selectDenom(d));
+      this.chipImages[d] = img;
+
+      this.add
+        .text(x, y + iconSize * 0.6, `x${this.chipCounts[d]}`, {
+          fontSize: '20px',
+          color: '#fff',
+        })
+        .setOrigin(0.5);
+
+      if (i === 0) this.selectDenom(d);
+    });
+  }
+
+  private selectDenom(d: number) {
+    this.selectedDenom = d;
+    Object.values(this.chipImages).forEach((img) => img.clearTint());
+    this.chipImages[d].setTint(0x00ff00);
+  }
+
+  private updateChipPalette() {
+    Object.entries(this.chipImages).forEach(([den, img]) => {
+      const count = this.chipCounts[+den];
+      this.children.list.forEach((c) => {
+        if (
+          c instanceof Phaser.GameObjects.Text &&
+          Math.abs(c.x - img.x) < 1 &&
+          c.y > img.y
+        ) {
+          c.setText(`x${count}`);
+        }
+      });
+    });
+  }
+
+  private drawWithdraw() {
+    this.add
+      .text(this.tableX + this.tableW - 100, this.tableY - 40, 'Withdraw', {
+        fontSize: '18px',
+        color: '#88ff88',
+        backgroundColor: '#003300',
+        padding: { x: 8, y: 4 },
+      })
+      .setInteractive({ cursor: 'pointer' })
+      .on('pointerup', () => this.withdrawChips());
+  }
+
+  private async withdrawChips() {
+    const total = Object.entries(this.chipCounts).reduce(
+      (sum, [d, c]) => sum + Number(d) * c,
+      0
+    );
+    if (total === 0) {
+      this.outcomeText.setText('No chips to withdraw.');
       return;
     }
-    const refund = this.bets.reduce((sum, b) => sum + b.amount, 0);
-    const cr = await credit(refund);
+    const cr = await credit(total);
     this.balanceText.setText(`Balance: $${cr.balance}`);
-    this.bets.forEach((b) => b.sprite.destroy());
-    this.bets = [];
-    this.outcomeText.setText('Bets cleared');
+    this.chipCounts = { 1: 0, 5: 0, 25: 0, 100: 0 };
+    this.updateChipPalette();
+    this.outcomeText.setText(`Withdrew ${total} chips`);
+  }
+
+  private createSpinButton() {
+    const segments = 5;
+    const segW = this.tableW / segments;
+    const x = this.tableX + segW * (segments - 0.5);
+    const y = this.tableY + this.tableH + this.cellH * 1.5;
+    const size = segW * 0.6;
+
+    this.add
+      .image(x, y, 'spinButton')
+      .setDisplaySize(size, size)
+      .setInteractive({ cursor: 'pointer' })
+      .on('pointerup', () => this.handleSpin());
   }
 
   private async handleSpin() {
-    if (this.isSpinning) return;
     if (this.bets.length === 0) {
       this.outcomeText.setText('Place at least one bet!');
       return;
     }
-    this.isSpinning = true;
-    this.spinBtn.disableInteractive();
-    this.outcomeText.setText('');
     this.spinSound.play();
 
     const { seed } = await initRNG('roulette');
-    const outcomeNum = parseInt(seed.slice(-2), 36) % 37;
-    const angle = 360 * 5 + (360 / 37) * outcomeNum;
+    const win = parseInt(seed.slice(-2), 36) % 37;
+
+    const wheel = this.add
+      .sprite(
+        this.tableX + this.tableW / 2,
+        this.tableY + this.tableH / 2,
+        'rouletteSprites',
+        'sprite.png'
+      )
+      .setDisplaySize(this.tableW * 0.45, this.tableW * 0.45);
 
     this.tweens.add({
-      targets: this.wheel,
-      angle,
+      targets: wheel,
+      angle: 360 * 5 + (360 / 37) * win,
       duration: 3000,
       ease: 'Cubic.easeOut',
       onComplete: () => {
+        wheel.destroy();
         this.dropSound.play();
-        this.resolveBets(outcomeNum);
+        this.resolveBets(win);
       },
     });
   }
 
-  private async resolveBets(winningNum: number) {
-    let payoutTotal = 0;
+  private async resolveBets(win: number) {
+    let won = 0;
     this.bets.forEach((b) => {
-      if (b.number === winningNum) {
-        payoutTotal += b.amount * 36; // 35:1 + stake
-      }
       b.sprite.destroy();
+      if (b.number === win) {
+        won += b.denom * 2;
+        this.chipCounts[b.denom] += 2;
+      }
     });
     this.bets = [];
+    this.updateChipPalette();
 
-    if (payoutTotal > 0) {
-      const cr = await credit(payoutTotal);
-      this.balanceText.setText(`Balance: $${cr.balance}`);
+    if (won > 0) {
       this.payoutSound.play();
-      this.add.sprite(400, 300, 'confetti').play('confettiBurst').setScale(1.5);
-      this.outcomeText.setText(`Number ${winningNum}! You win $${payoutTotal}`);
+      this.outcomeText.setText(`Hit ${win}! +${won} chips`);
+      this.add
+        .sprite(
+          this.tableX + this.tableW / 2,
+          this.tableY + this.tableH / 2,
+          'confetti'
+        )
+        .play('confettiBurst')
+        .setScale(1.5);
     } else {
-      this.outcomeText.setText(`No hits—try again! (${winningNum})`);
+      this.outcomeText.setText(`No hits—${win}`);
     }
-
-    this.time.delayedCall(2000, () => this.resetSpin());
-  }
-
-  private resetSpin() {
-    this.isSpinning = false;
-    this.spinBtn.setInteractive({ cursor: 'pointer' });
-  }
-
-  private createFallbackWheel(): void {
-    const graphics = this.add.graphics({ x: 400, y: 300 });
-    graphics.fillStyle(0x8b4513);
-    graphics.fillCircle(0, 0, 180);
-    graphics.fillStyle(0x000000);
-    graphics.fillCircle(0, 0, 170);
-    for (let i = 0; i < 37; i++) {
-      const start = (i / 37) * Math.PI * 2;
-      const end = start + (Math.PI * 2) / 37;
-      const color = i === 0 ? 0x00ff00 : i % 2 === 0 ? 0xff0000 : 0x000000;
-      graphics.fillStyle(color);
-      graphics.slice(0, 0, 160, start, end, false);
-      graphics.fillPath();
-    }
-    this.wheel = graphics as any;
   }
 }
