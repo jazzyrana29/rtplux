@@ -124,7 +124,7 @@ export default class RouletteScene extends Phaser.Scene {
 
     // Build UI controls
     this.createBuyButton();
-    this.drawWithdraw();
+    this.drawWithdrawl();
     this.drawChipPalette();
     this.createSpinButton();
 
@@ -459,7 +459,7 @@ export default class RouletteScene extends Phaser.Scene {
     }
   }
 
-  private drawWithdraw() {
+  private drawWithdrawl() {
     this.add
       .text(this.tableX + this.tableW - 100, this.tableY - 40, 'Withdraw', {
         fontSize: '18px',
