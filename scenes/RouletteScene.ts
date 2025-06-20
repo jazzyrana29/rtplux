@@ -49,25 +49,36 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   preload(): void {
+    // Load chip atlas
     this.load.atlas(
       'chips',
       '/public/assets/games/roulette/chips.png',
       '/public/assets/games/roulette/chips.json'
     );
+    // Load spin button
     this.load.image(
       'spinButton',
       '/public/assets/games/roulette/spin_button.webp'
     );
+    // Load wheel sprites
     this.load.atlas(
       'rouletteSprites',
       '/public/assets/games/roulette/rouletteSprites.webp',
       '/public/assets/games/roulette/rouletteSprites.json'
     );
+    // Load confetti atlas
     this.load.atlas(
       'confetti',
       '/public/assets/games/roulette/confetti-0.webp',
       '/public/assets/games/roulette/confetti-0.json'
     );
+    // Load digits atlas for result display (optimized assets)
+    this.load.atlas(
+      'digits',
+      '/public/assets/games/roulette/digitAtlas.png',
+      '/public/assets/games/roulette/digitAtlas.json'
+    );
+    // Load sounds
     this.load.audio(
       'spinSound',
       '/public/assets/games/roulette/audio/roulette_spin.mp3'
@@ -83,15 +94,15 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   async create(): Promise<void> {
-    // Sounds
+    // Initialize sounds
     this.spinSound = this.sound.add('spinSound');
     this.dropSound = this.sound.add('dropSound');
     this.payoutSound = this.sound.add('payoutSound');
 
-    // Draw table & metrics
+    // Draw table and calculate metrics
     this.drawTable();
 
-    // Load balance
+    // Fetch and display balance
     const bal = await getBalance();
     this.currentBalance = bal.balance;
     this.balanceText = this.add
@@ -102,28 +113,28 @@ export default class RouletteScene extends Phaser.Scene {
       })
       .setShadow(2, 2, '#000', 2);
 
-    // Outcome text
+    // Outcome text (top-left info)
     this.outcomeText = this.add
-      .text(this.scale.width / 2, this.tableY - 40, '', {
-        fontSize: '32px',
+      .text(this.tableX, this.tableY - this.cellH * 2.8, '', {
+        fontSize: '18px',
         color: '#ffff00',
         fontStyle: 'bold',
       })
-      .setOrigin(0.5);
+      .setOrigin(0, 0);
 
-    // Controls
+    // Build UI controls
     this.createBuyButton();
     this.drawWithdraw();
     this.drawChipPalette();
     this.createSpinButton();
 
-    // Enable betting
+    // Enable betting on table
     this.enableTableBetting();
 
-    // Purchase UI
+    // Build purchase overlay (hidden)
     this.buildPurchaseUI();
 
-    // Confetti animation
+    // Prepare confetti animation
     if (this.textures.exists('confetti')) {
       this.anims.create({
         key: 'confettiBurst',
@@ -160,7 +171,7 @@ export default class RouletteScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // Grid 1–36
+    // 1–36 grid
     for (let n = 1; n <= 36; n++) {
       const row = Math.floor((n - 1) / 3);
       const col = (n - 1) % 3;
@@ -177,7 +188,7 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   private enableTableBetting() {
-    // Zero
+    // Zero cell
     this.add
       .rectangle(
         this.tableX + this.tableW / 2,
@@ -190,15 +201,14 @@ export default class RouletteScene extends Phaser.Scene {
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.placeBet(0));
 
-    // 1–36
+    // Cells 1–36
     for (let n = 1; n <= 36; n++) {
       const row = Math.floor((n - 1) / 3);
       const col = (n - 1) % 3;
-      const xCenter = this.tableX + col * this.cellW + this.cellW / 2;
-      const yCenter =
-        this.tableY + this.cellH + row * this.cellH + this.cellH / 2;
+      const cx = this.tableX + col * this.cellW + this.cellW / 2;
+      const cy = this.tableY + this.cellH + row * this.cellH + this.cellH / 2;
       this.add
-        .rectangle(xCenter, yCenter, this.cellW, this.cellH, 0, 0)
+        .rectangle(cx, cy, this.cellW, this.cellH, 0, 0)
         .setInteractive({ cursor: 'pointer' })
         .on('pointerup', () => this.placeBet(n));
     }
@@ -212,7 +222,7 @@ export default class RouletteScene extends Phaser.Scene {
     this.chipCounts[this.selectedDenom]--;
     this.updateChipPalette();
 
-    // Cell center
+    // Determine cell center
     let cx: number, cy: number;
     if (num === 0) {
       cx = this.tableX + this.tableW / 2;
@@ -224,7 +234,7 @@ export default class RouletteScene extends Phaser.Scene {
       cy = this.tableY + this.cellH + row * this.cellH + this.cellH / 2;
     }
 
-    // Multi-chip offsets
+    // Compute multi-chip offsets
     const existing = this.bets.filter((b) => b.number === num).length;
     const offsets: [number, number][] = [
       [-0.2, -0.2],
@@ -234,14 +244,15 @@ export default class RouletteScene extends Phaser.Scene {
     ];
     const [ox, oy] = offsets[existing % offsets.length];
 
-    // Icon size: fit within cell
+    // Chip size fits inside the cell
     const iconSize = Math.min(this.cellW, this.cellH) * 0.5;
     const x = cx + ox * this.cellW * 0.4;
     const y = cy + oy * this.cellH * 0.4;
 
     const sprite = this.add
       .image(x, y, 'chips', `chip${this.selectedDenom}.png`)
-      .setDisplaySize(iconSize, iconSize);
+      .setDisplaySize(iconSize, iconSize)
+      .setDepth(1);
     this.bets.push({ number: num, denom: this.selectedDenom, sprite });
   }
 
@@ -253,13 +264,11 @@ export default class RouletteScene extends Phaser.Scene {
 
     denoms.forEach((d, i) => {
       const x = this.tableX + segW * (i + 0.5);
-      const img = this.add
+      this.chipImages[d] = this.add
         .image(x, y, 'chips', `chip${d}.png`)
         .setDisplaySize(iconSize, iconSize)
         .setInteractive({ cursor: 'pointer' })
         .on('pointerup', () => this.selectDenom(d));
-      this.chipImages[d] = img;
-
       this.add
         .text(x, y + iconSize * 0.6, `x${this.chipCounts[d]}`, {
           fontSize: '20px',
@@ -267,7 +276,9 @@ export default class RouletteScene extends Phaser.Scene {
         })
         .setOrigin(0.5);
 
-      if (i === 0) this.selectDenom(d);
+      if (i === 0) {
+        this.selectDenom(d);
+      }
     });
   }
 
@@ -313,15 +324,17 @@ export default class RouletteScene extends Phaser.Scene {
       .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.6)
       .setOrigin(0, 0);
     this.purchaseContainer.add(overlay);
-    const pw = this.scale.width * 0.6,
-      ph = this.scale.height * 0.5;
-    const px = (this.scale.width - pw) / 2,
-      py = (this.scale.height - ph) / 2;
+
+    const pw = this.scale.width * 0.6;
+    const ph = this.scale.height * 0.5;
+    const px = (this.scale.width - pw) / 2;
+    const py = (this.scale.height - ph) / 2;
     const panel = this.add
       .rectangle(px, py, pw, ph, 0x003300)
       .setOrigin(0, 0)
       .setStrokeStyle(4, 0xffff00);
     this.purchaseContainer.add(panel);
+
     const title = this.add
       .text(this.scale.width / 2, py + 30, 'Buy Chips', {
         fontSize: '32px',
@@ -330,12 +343,13 @@ export default class RouletteScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.purchaseContainer.add(title);
+
     const denoms = [1, 5, 25, 100];
-    const startX = px + pw * 0.15,
-      gapX = (pw * 0.7) / (denoms.length - 1);
+    const startX = px + pw * 0.15;
+    const gapX = (pw * 0.7) / (denoms.length - 1);
     denoms.forEach((d, i) => {
-      const cx = startX + gapX * i,
-        cy = py + ph * 0.3;
+      const cx = startX + gapX * i;
+      const cy = py + ph * 0.3;
       const icon = this.add
         .image(cx, cy, 'chips', `chip${d}.png`)
         .setDisplaySize(64, 64)
@@ -344,15 +358,18 @@ export default class RouletteScene extends Phaser.Scene {
       const txt = this.add
         .text(cx, cy + 50, 'x0', { fontSize: '20px', color: '#fff' })
         .setOrigin(0.5);
-      this.purchaseContainer.add([icon, txt]);
+      this.purchaseContainer.add(icon);
+      this.purchaseContainer.add(txt);
     });
+
     this.purchaseTotalText = this.add
       .text(this.scale.width / 2, py + ph * 0.6, 'Total: $0', {
         fontSize: '24px',
-        color: '#fff',
+        color: '#ffffff',
       })
       .setOrigin(0.5);
     this.purchaseContainer.add(this.purchaseTotalText);
+
     this.confirmBtn = this.add
       .text(this.scale.width / 2 - 80, py + ph * 0.8, 'Confirm', {
         fontSize: '20px',
@@ -373,7 +390,8 @@ export default class RouletteScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.hidePurchaseUI());
-    this.purchaseContainer.add([this.confirmBtn, this.cancelBtn]);
+    this.purchaseContainer.add(this.confirmBtn);
+    this.purchaseContainer.add(this.cancelBtn);
   }
 
   private showPurchaseUI() {
@@ -403,15 +421,18 @@ export default class RouletteScene extends Phaser.Scene {
         const txt = child as Phaser.GameObjects.Text;
         const xPos = txt.x;
         const denom = [1, 5, 25, 100].find((d) => {
-          const img = this.purchaseContainer.list.find(
-            (c) =>
-              c instanceof Phaser.GameObjects.Image &&
-              (c as Phaser.GameObjects.Image).frame.name === `chip${d}.png` &&
-              Math.abs((c as Phaser.GameObjects.Image).x - xPos) < 2
+          return (
+            this.purchaseContainer.list.find(
+              (c) =>
+                c instanceof Phaser.GameObjects.Image &&
+                (c as Phaser.GameObjects.Image).frame.name === `chip${d}.png` &&
+                Math.abs((c as Phaser.GameObjects.Image).x - xPos) < 2
+            ) != null
           );
-          return !!img;
         });
-        if (denom !== undefined) txt.setText(`x${this.purchaseCounts[denom]}`);
+        if (denom !== undefined) {
+          txt.setText(`x${this.purchaseCounts[denom]}`);
+        }
       }
     });
     const total = Object.entries(this.purchaseCounts).reduce(
@@ -485,8 +506,10 @@ export default class RouletteScene extends Phaser.Scene {
       return;
     }
     this.spinSound.play();
+    // RNG draw
     const { seed } = await initRNG('roulette');
     const win = parseInt(seed.slice(-2), 36) % 37;
+    // Wheel animation
     const wheel = this.add
       .sprite(
         this.tableX + this.tableW / 2,
@@ -494,7 +517,8 @@ export default class RouletteScene extends Phaser.Scene {
         'rouletteSprites',
         'sprite.png'
       )
-      .setDisplaySize(this.tableW * 0.45, this.tableW * 0.45);
+      .setDisplaySize(this.tableW * 0.45, this.tableW * 0.45)
+      .setDepth(1000);
     this.tweens.add({
       targets: wheel,
       angle: 360 * 5 + (360 / 37) * win,
@@ -503,8 +527,41 @@ export default class RouletteScene extends Phaser.Scene {
       onComplete: () => {
         wheel.destroy();
         this.dropSound.play();
+        this.showResultDigits(win);
         this.resolveBets(win);
       },
+    });
+  }
+
+  // Display the win digits above the table header
+  // Display the win digits above the header using the digits atlas
+  private showResultDigits(win: number) {
+    // Convert number to string (no padding) so we pick the actual digits
+    const digits = win.toString().split('');
+
+    // Clear out any existing result digits
+    this.children.list
+      .filter((c) => c.name === 'resultDigit')
+      .forEach((c) => c.destroy());
+
+    // Calculate placement
+    const size = this.cellH; // square size
+    const totalWidth = size * digits.length;
+    const startX = this.tableX + (this.tableW - totalWidth) / 2;
+    const y = this.tableY - this.cellH * 2.5; // high above header
+
+    // Render each digit
+    digits.forEach((d, i) => {
+      this.add
+        .image(
+          startX + i * size,
+          y,
+          'digits',
+          `casino_digits_pngs/digit_${d}.png`
+        )
+        .setDisplaySize(size, size)
+        .setDepth(500)
+        .setName('resultDigit');
     });
   }
 
@@ -521,7 +578,7 @@ export default class RouletteScene extends Phaser.Scene {
     this.updateChipPalette();
     if (won > 0) {
       this.payoutSound.play();
-      this.outcomeText.setText(`Hit ${win}! +${won} chips`);
+      this.outcomeText.setText(`Hit +${won} chips`);
       this.add
         .sprite(
           this.tableX + this.tableW / 2,
@@ -531,7 +588,7 @@ export default class RouletteScene extends Phaser.Scene {
         .play('confettiBurst')
         .setScale(1.5);
     } else {
-      this.outcomeText.setText(`No hits—${win}`);
+      this.outcomeText.setText(`No hits`);
     }
   }
 }
