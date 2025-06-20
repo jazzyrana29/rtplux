@@ -1,0 +1,38 @@
+<!-- public/iframe-template.html -->
+<!DOCTYPE html>
+<html lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width,initial-scale=1" name="viewport" />
+  <style>html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden
+  }</style>
+  <title></title>
+</head>
+<body>
+<div id="game-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+<script src="roulette.bundle.ts"></script>
+<script>
+  // Parent → Iframe INIT handshake
+  window.addEventListener('message', ({ data }) => {
+    if (data && data.type === 'INIT' && typeof initGame === 'function') {
+      initGame(data.payload);
+    }
+  });
+
+  // Notify parent when ready
+  window.parent.postMessage({ type: 'LOADED' }, '*');
+
+  // When the game finishes, call:
+  // window.parent.postMessage({
+  //   type: 'RESULT',
+  //   payload: { winAmount, outcomeRNGSeed }
+  // }, '*');
+</script>
+</body>
+</html>

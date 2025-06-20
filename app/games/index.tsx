@@ -21,7 +21,7 @@ export default function GamesScreen() {
         </Text>
 
         {/* Navigable Game Card for Roulette */}
-        <Link href="/games/roulette">
+        <Link href="/games/roulette/Roulette">
           <GameCard title="🎯 Roulette" subtitle="Play Now" />
         </Link>
 

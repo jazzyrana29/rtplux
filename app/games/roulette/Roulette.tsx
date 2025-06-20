@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
-import RouletteScene from '../../scenes/RouletteScene';
+import RouletteScene from '../../../scenes/RouletteScene';
 
 const RouletteGame: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
