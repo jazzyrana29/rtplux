@@ -83,15 +83,15 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   async create(): Promise<void> {
-    // ── Sounds ───────────────────────────────────────────────────
+    // Sounds
     this.spinSound = this.sound.add('spinSound');
     this.dropSound = this.sound.add('dropSound');
     this.payoutSound = this.sound.add('payoutSound');
 
-    // ── Draw table & record metrics ──────────────────────────────
+    // Draw table & metrics
     this.drawTable();
 
-    // ── Balance display & initial load ──────────────────────────
+    // Load balance
     const bal = await getBalance();
     this.currentBalance = bal.balance;
     this.balanceText = this.add
@@ -102,7 +102,7 @@ export default class RouletteScene extends Phaser.Scene {
       })
       .setShadow(2, 2, '#000', 2);
 
-    // ── Outcome text (for errors/wins) ──────────────────────────
+    // Outcome text
     this.outcomeText = this.add
       .text(this.scale.width / 2, this.tableY - 40, '', {
         fontSize: '32px',
@@ -111,19 +111,19 @@ export default class RouletteScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // ── Controls: Buy, Withdraw, Chips, Spin ────────────────────
+    // Controls
     this.createBuyButton();
     this.drawWithdraw();
     this.drawChipPalette();
     this.createSpinButton();
 
-    // ── Betting interaction ─────────────────────────────────────
+    // Enable betting
     this.enableTableBetting();
 
-    // ── Purchase UI (hidden until Buy clicked) ──────────────────
+    // Purchase UI
     this.buildPurchaseUI();
 
-    // ── Confetti animation setup ────────────────────────────────
+    // Confetti animation
     if (this.textures.exists('confetti')) {
       this.anims.create({
         key: 'confettiBurst',
@@ -140,7 +140,6 @@ export default class RouletteScene extends Phaser.Scene {
     }
   }
 
-  // ── Draws the roulette table grid via Graphics/Text ─────────
   private drawTable() {
     const { width, height } = this.scale;
     this.tableW = width * 0.8;
@@ -148,10 +147,10 @@ export default class RouletteScene extends Phaser.Scene {
     this.tableX = (width - this.tableW) / 2;
     this.tableY = (height - this.tableH) / 2;
     this.cellW = this.tableW / 3;
-    this.cellH = this.tableH / 13; // zero + 12 rows
+    this.cellH = this.tableH / 13;
 
     const g = this.add.graphics().lineStyle(2, 0xffffff);
-    // zero
+    // Zero row
     g.strokeRect(this.tableX, this.tableY, this.tableW, this.cellH);
     this.add
       .text(this.tableX + this.tableW / 2, this.tableY + this.cellH / 2, '0', {
@@ -161,10 +160,10 @@ export default class RouletteScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // 1–36
+    // Grid 1–36
     for (let n = 1; n <= 36; n++) {
-      const row = Math.floor((n - 1) / 3),
-        col = (n - 1) % 3;
+      const row = Math.floor((n - 1) / 3);
+      const col = (n - 1) % 3;
       const x = this.tableX + col * this.cellW;
       const y = this.tableY + this.cellH + row * this.cellH;
       g.strokeRect(x, y, this.cellW, this.cellH);
@@ -177,9 +176,8 @@ export default class RouletteScene extends Phaser.Scene {
     }
   }
 
-  // ── Enables clicking on each table cell to place bets ────────
   private enableTableBetting() {
-    // zero slot
+    // Zero
     this.add
       .rectangle(
         this.tableX + this.tableW / 2,
@@ -190,29 +188,23 @@ export default class RouletteScene extends Phaser.Scene {
         0
       )
       .setInteractive({ cursor: 'pointer' })
-      .on('pointerup', () =>
-        this.placeBet(
-          0,
-          this.tableX + this.tableW / 2,
-          this.tableY + this.cellH / 2
-        )
-      );
+      .on('pointerup', () => this.placeBet(0));
 
-    // 1–36 slots
+    // 1–36
     for (let n = 1; n <= 36; n++) {
-      const row = Math.floor((n - 1) / 3),
-        col = (n - 1) % 3;
-      const x = this.tableX + col * this.cellW + this.cellW / 2;
-      const y = this.tableY + this.cellH + row * this.cellH + this.cellH / 2;
+      const row = Math.floor((n - 1) / 3);
+      const col = (n - 1) % 3;
+      const xCenter = this.tableX + col * this.cellW + this.cellW / 2;
+      const yCenter =
+        this.tableY + this.cellH + row * this.cellH + this.cellH / 2;
       this.add
-        .rectangle(x, y, this.cellW, this.cellH, 0, 0)
+        .rectangle(xCenter, yCenter, this.cellW, this.cellH, 0, 0)
         .setInteractive({ cursor: 'pointer' })
-        .on('pointerup', () => this.placeBet(n, x, y));
+        .on('pointerup', () => this.placeBet(n));
     }
   }
 
-  // ── Place a chip on the board if available ──────────────────
-  private async placeBet(num: number, x: number, y: number) {
+  private async placeBet(num: number) {
     if (this.chipCounts[this.selectedDenom] <= 0) {
       this.outcomeText.setText(`No $${this.selectedDenom} chips left!`);
       return;
@@ -220,16 +212,39 @@ export default class RouletteScene extends Phaser.Scene {
     this.chipCounts[this.selectedDenom]--;
     this.updateChipPalette();
 
-    const segW = this.tableW / 5;
-    const iconSize = segW * 0.6;
+    // Cell center
+    let cx: number, cy: number;
+    if (num === 0) {
+      cx = this.tableX + this.tableW / 2;
+      cy = this.tableY + this.cellH / 2;
+    } else {
+      const row = Math.floor((num - 1) / 3);
+      const col = (num - 1) % 3;
+      cx = this.tableX + col * this.cellW + this.cellW / 2;
+      cy = this.tableY + this.cellH + row * this.cellH + this.cellH / 2;
+    }
+
+    // Multi-chip offsets
+    const existing = this.bets.filter((b) => b.number === num).length;
+    const offsets: [number, number][] = [
+      [-0.2, -0.2],
+      [0.2, -0.2],
+      [-0.2, 0.2],
+      [0.2, 0.2],
+    ];
+    const [ox, oy] = offsets[existing % offsets.length];
+
+    // Icon size: fit within cell
+    const iconSize = Math.min(this.cellW, this.cellH) * 0.5;
+    const x = cx + ox * this.cellW * 0.4;
+    const y = cy + oy * this.cellH * 0.4;
+
     const sprite = this.add
       .image(x, y, 'chips', `chip${this.selectedDenom}.png`)
       .setDisplaySize(iconSize, iconSize);
-
     this.bets.push({ number: num, denom: this.selectedDenom, sprite });
   }
 
-  // ── Draws the 4‐chip palette below the table ────────────────
   private drawChipPalette() {
     const denoms = [1, 5, 25, 100];
     const segW = this.tableW / 5;
@@ -277,7 +292,6 @@ export default class RouletteScene extends Phaser.Scene {
     });
   }
 
-  // ── Adds a “Buy chips” button next to Withdraw ───────────────
   private createBuyButton() {
     this.buyBtn = this.add
       .text(this.tableX + this.tableW - 300, this.tableY - 40, 'Buy chips', {
@@ -290,71 +304,59 @@ export default class RouletteScene extends Phaser.Scene {
       .on('pointerup', () => this.showPurchaseUI());
   }
 
-  // ── Builds the purchase overlay UI (initially hidden) ───────
   private buildPurchaseUI() {
-    this.purchaseContainer = this.add.container(0, 0).setVisible(false);
-
-    // overlay
+    this.purchaseContainer = this.add
+      .container(0, 0)
+      .setVisible(false)
+      .setDepth(1000);
     const overlay = this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000, 0.6)
+      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.6)
       .setOrigin(0, 0);
     this.purchaseContainer.add(overlay);
-
-    // panel
-    const w = this.scale.width * 0.6,
-      h = this.scale.height * 0.5;
-    const x = (this.scale.width - w) / 2,
-      y = (this.scale.height - h) / 2;
+    const pw = this.scale.width * 0.6,
+      ph = this.scale.height * 0.5;
+    const px = (this.scale.width - pw) / 2,
+      py = (this.scale.height - ph) / 2;
     const panel = this.add
-      .rectangle(x, y, w, h, 0x003300)
+      .rectangle(px, py, pw, ph, 0x003300)
       .setOrigin(0, 0)
       .setStrokeStyle(4, 0xffff00);
     this.purchaseContainer.add(panel);
-
-    // title
     const title = this.add
-      .text(this.scale.width / 2, y + 30, 'Buy Chips', {
+      .text(this.scale.width / 2, py + 30, 'Buy Chips', {
         fontSize: '32px',
-        color: '#ff0',
+        color: '#ffff00',
         fontStyle: 'bold',
       })
       .setOrigin(0.5);
     this.purchaseContainer.add(title);
-
-    // chip options
     const denoms = [1, 5, 25, 100];
-    const startX = x + w * 0.15;
-    const gapX = (w * 0.7) / (denoms.length - 1);
+    const startX = px + pw * 0.15,
+      gapX = (pw * 0.7) / (denoms.length - 1);
     denoms.forEach((d, i) => {
-      const px = startX + gapX * i;
-      const py = y + h * 0.3;
+      const cx = startX + gapX * i,
+        cy = py + ph * 0.3;
       const icon = this.add
-        .image(px, py, 'chips', `chip${d}.png`)
+        .image(cx, cy, 'chips', `chip${d}.png`)
         .setDisplaySize(64, 64)
         .setInteractive({ cursor: 'pointer' })
         .on('pointerup', () => this.addPurchase(d));
-      this.purchaseContainer.add(icon);
-
       const txt = this.add
-        .text(px, py + 50, 'x0', { fontSize: '20px', color: '#fff' })
+        .text(cx, cy + 50, 'x0', { fontSize: '20px', color: '#fff' })
         .setOrigin(0.5);
-      this.purchaseContainer.add(txt);
+      this.purchaseContainer.add([icon, txt]);
     });
-
-    // total
     this.purchaseTotalText = this.add
-      .text(this.scale.width / 2, y + h * 0.6, 'Total: $0', {
+      .text(this.scale.width / 2, py + ph * 0.6, 'Total: $0', {
         fontSize: '24px',
         color: '#fff',
       })
       .setOrigin(0.5);
     this.purchaseContainer.add(this.purchaseTotalText);
-
-    // confirm & cancel
     this.confirmBtn = this.add
-      .text(this.scale.width / 2 - 80, y + h * 0.8, 'Confirm', {
+      .text(this.scale.width / 2 - 80, py + ph * 0.8, 'Confirm', {
         fontSize: '20px',
-        color: '#0f0',
+        color: '#00ff00',
         backgroundColor: '#003300',
         padding: { x: 10, y: 5 },
       })
@@ -362,10 +364,10 @@ export default class RouletteScene extends Phaser.Scene {
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.confirmPurchase());
     this.cancelBtn = this.add
-      .text(this.scale.width / 2 + 80, y + h * 0.8, 'Cancel', {
+      .text(this.scale.width / 2 + 80, py + ph * 0.8, 'Cancel', {
         fontSize: '20px',
-        color: '#f44',
-        backgroundColor: '#300',
+        color: '#ff4444',
+        backgroundColor: '#330000',
         padding: { x: 10, y: 5 },
       })
       .setOrigin(0.5)
@@ -384,25 +386,22 @@ export default class RouletteScene extends Phaser.Scene {
     this.purchaseContainer.setVisible(false);
   }
 
-  private addPurchase(denom: number) {
-    const totalSoFar = Object.entries(this.purchaseCounts).reduce(
-      (sum, [d, c]) => sum + Number(d) * c,
+  private addPurchase(d: number) {
+    const total = Object.entries(this.purchaseCounts).reduce(
+      (s, [den, c]) => s + Number(den) * c,
       0
     );
-    if (totalSoFar + denom > this.currentBalance) return;
-    this.purchaseCounts[denom]++;
-    this.updatePurchaseUI();
+    if (total + d <= this.currentBalance) {
+      this.purchaseCounts[d]++;
+      this.updatePurchaseUI();
+    }
   }
 
   private updatePurchaseUI() {
-    // update each “x#” below chips
     this.purchaseContainer.list.forEach((child) => {
       if (child instanceof Phaser.GameObjects.Text && /^x\d/.test(child.text)) {
-        // Narrow the type so .x and .text are available
         const txt = child as Phaser.GameObjects.Text;
         const xPos = txt.x;
-
-        // Find the matching chip icon by comparing its x‐coordinate
         const denom = [1, 5, 25, 100].find((d) => {
           const img = this.purchaseContainer.list.find(
             (c) =>
@@ -412,16 +411,11 @@ export default class RouletteScene extends Phaser.Scene {
           );
           return !!img;
         });
-
-        if (denom !== undefined) {
-          txt.setText(`x${this.purchaseCounts[denom]}`);
-        }
+        if (denom !== undefined) txt.setText(`x${this.purchaseCounts[denom]}`);
       }
     });
-
-    // update the total cost
     const total = Object.entries(this.purchaseCounts).reduce(
-      (s, [d, c]) => s + Number(d) * c,
+      (s, [den, c]) => s + Number(den) * c,
       0
     );
     this.purchaseTotalText.setText(`Total: $${total}`);
@@ -429,21 +423,21 @@ export default class RouletteScene extends Phaser.Scene {
 
   private async confirmPurchase() {
     const total = Object.entries(this.purchaseCounts).reduce(
-      (s, [d, c]) => s + Number(d) * c,
+      (s, [den, c]) => s + Number(den) * c,
       0
     );
-    if (total <= 0) return;
-    const dr = await debit(total);
-    this.currentBalance = dr.balance;
-    this.balanceText.setText(`Balance: $${dr.balance}`);
-    Object.entries(this.purchaseCounts).forEach(([d, c]) => {
-      this.chipCounts[+d] += c;
-    });
-    this.updateChipPalette();
-    this.hidePurchaseUI();
+    if (total > 0) {
+      const dr = await debit(total);
+      this.currentBalance = dr.balance;
+      this.balanceText.setText(`Balance: $${dr.balance}`);
+      Object.entries(this.purchaseCounts).forEach(
+        ([den, c]) => (this.chipCounts[+den] += c)
+      );
+      this.updateChipPalette();
+      this.hidePurchaseUI();
+    }
   }
 
-  // ── Withdraw chips back to balance ───────────────────────────
   private drawWithdraw() {
     this.add
       .text(this.tableX + this.tableW - 100, this.tableY - 40, 'Withdraw', {
@@ -458,22 +452,21 @@ export default class RouletteScene extends Phaser.Scene {
 
   private async withdrawChips() {
     const total = Object.entries(this.chipCounts).reduce(
-      (s, [d, c]) => s + Number(d) * c,
+      (s, [den, c]) => s + Number(den) * c,
       0
     );
-    if (total === 0) {
+    if (total > 0) {
+      const cr = await credit(total);
+      this.currentBalance = cr.balance;
+      this.balanceText.setText(`Balance: $${cr.balance}`);
+      this.chipCounts = { 1: 0, 5: 0, 25: 0, 100: 0 };
+      this.updateChipPalette();
+      this.outcomeText.setText(`Withdrew ${total} chips`);
+    } else {
       this.outcomeText.setText('No chips to withdraw.');
-      return;
     }
-    const cr = await credit(total);
-    this.currentBalance = cr.balance;
-    this.balanceText.setText(`Balance: $${cr.balance}`);
-    this.chipCounts = { 1: 0, 5: 0, 25: 0, 100: 0 };
-    this.updateChipPalette();
-    this.outcomeText.setText(`Withdrew ${total} chips`);
   }
 
-  // ── SPIN button in segment 5 ────────────────────────────────
   private createSpinButton() {
     const segW = this.tableW / 5;
     const x = this.tableX + segW * 4.5;
@@ -492,10 +485,8 @@ export default class RouletteScene extends Phaser.Scene {
       return;
     }
     this.spinSound.play();
-
     const { seed } = await initRNG('roulette');
     const win = parseInt(seed.slice(-2), 36) % 37;
-
     const wheel = this.add
       .sprite(
         this.tableX + this.tableW / 2,
@@ -504,7 +495,6 @@ export default class RouletteScene extends Phaser.Scene {
         'sprite.png'
       )
       .setDisplaySize(this.tableW * 0.45, this.tableW * 0.45);
-
     this.tweens.add({
       targets: wheel,
       angle: 360 * 5 + (360 / 37) * win,
@@ -529,7 +519,6 @@ export default class RouletteScene extends Phaser.Scene {
     });
     this.bets = [];
     this.updateChipPalette();
-
     if (won > 0) {
       this.payoutSound.play();
       this.outcomeText.setText(`Hit ${win}! +${won} chips`);
