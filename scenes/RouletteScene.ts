@@ -34,6 +34,8 @@ export default class RouletteScene extends Phaser.Scene {
   private spinSound!: Phaser.Sound.BaseSound;
   private dropSound!: Phaser.Sound.BaseSound;
   private payoutSound!: Phaser.Sound.BaseSound;
+  private buyChipsSound!: Phaser.Sound.BaseSound;
+  private withdrawalSound!: Phaser.Sound.BaseSound;
 
   // Betting state - now managed by Zustand
   private selectedDenom = 1;
@@ -120,6 +122,14 @@ export default class RouletteScene extends Phaser.Scene {
       'payoutSound',
       '/public/assets/games/roulette/audio/payout_jingle.mp3'
     );
+    this.load.audio(
+      'buyChipsSound',
+      '/public/assets/games/roulette/audio/buy_chips.mp3'
+    );
+    this.load.audio(
+      'withdrawalSound',
+      '/public/assets/games/roulette/audio/withdrawal.mp3'
+    );
   }
 
   async create(): Promise<void> {
@@ -127,6 +137,8 @@ export default class RouletteScene extends Phaser.Scene {
     this.spinSound = this.sound.add('spinSound');
     this.dropSound = this.sound.add('dropSound');
     this.payoutSound = this.sound.add('payoutSound');
+    this.buyChipsSound = this.sound.add('buyChipsSound');
+    this.withdrawalSound = this.sound.add('withdrawalSound');
 
     // Draw table and calculate metrics
     this.drawTable();
@@ -513,6 +525,9 @@ export default class RouletteScene extends Phaser.Scene {
       return;
     }
 
+    // Play buy chips sound when placing a bet
+    this.buyChipsSound.play();
+
     // Remove chip from store
     removeChips(this.selectedDenom, 1);
 
@@ -743,6 +758,9 @@ export default class RouletteScene extends Phaser.Scene {
       this.outcomeText.setText('No bets to reset!');
       return;
     }
+
+    // Play withdrawal sound
+    this.withdrawalSound.play();
 
     const betCount = this.bets.length;
     const { addChips } = useGameStore.getState();
@@ -1258,6 +1276,9 @@ export default class RouletteScene extends Phaser.Scene {
       0
     );
     if (total + d <= balance) {
+      // Play buy chips sound when adding chips to purchase
+      this.buyChipsSound.play();
+
       this.purchaseCounts[d]++;
       this.updatePurchaseUI();
     }
@@ -1315,6 +1336,9 @@ export default class RouletteScene extends Phaser.Scene {
     const total = getTotalChipValue();
 
     if (total > 0) {
+      // Play withdrawal sound
+      this.withdrawalSound.play();
+
       const cr = await credit(total);
       if (cr.success) {
         resetChips();
