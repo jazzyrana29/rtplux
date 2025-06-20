@@ -1,10 +1,11 @@
 import { Stack } from "expo-router"
 import { StatusBar } from "expo-status-bar"
+import { PostHogProvider } from "../contexts/PostHogProvider"
 import "../global.css"
 
 export default function RootLayout() {
   return (
-    <>
+    <PostHogProvider>
       <Stack
         screenOptions={{
           headerStyle: {
@@ -20,6 +21,6 @@ export default function RootLayout() {
         <Stack.Screen name="games" options={{ title: "Games" }} />
       </Stack>
       <StatusBar style="light" />
-    </>
+    </PostHogProvider>
   )
 }

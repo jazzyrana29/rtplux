@@ -2,6 +2,13 @@ import Phaser from 'phaser';
 import { credit, debit } from '../services/wallet';
 import { initRNG } from '../services/rng';
 import { useGameStore } from '../stores/gameStore';
+import {
+  trackBetPlaced,
+  trackChipPurchase,
+  trackGameEvent,
+  trackGameResult,
+  trackWithdrawal,
+} from '../lib/posthog';
 
 type BetType =
   | 'straight'
@@ -80,6 +87,9 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   preload(): void {
+    // Track game loading
+    trackGameEvent('game_loading_started', 'roulette');
+
     // Load chip atlas
     this.load.atlas(
       'chips',
@@ -133,6 +143,9 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   async create(): Promise<void> {
+    // Track game loaded
+    trackGameEvent('game_loaded', 'roulette');
+
     // Initialize sounds
     this.spinSound = this.sound.add('spinSound');
     this.dropSound = this.sound.add('dropSound');
@@ -191,6 +204,11 @@ export default class RouletteScene extends Phaser.Scene {
 
     // Subscribe to store changes for real-time updates
     this.subscribeToStoreChanges();
+
+    // Track game session started
+    trackGameEvent('game_session_started', 'roulette', {
+      initial_balance: balance,
+    });
   }
 
   private subscribeToStoreChanges() {
@@ -525,6 +543,9 @@ export default class RouletteScene extends Phaser.Scene {
       return;
     }
 
+    // Track bet placement
+    trackBetPlaced(this.selectedDenom, betType, 'roulette');
+
     // Play buy chips sound when placing a bet
     this.buyChipsSound.play();
 
@@ -668,6 +689,11 @@ export default class RouletteScene extends Phaser.Scene {
     this.selectedDenom = d;
     Object.values(this.chipImages).forEach((img) => img.clearTint());
     this.chipImages[d].setTint(0x00ff00);
+
+    // Track chip selection
+    trackGameEvent('chip_selected', 'roulette', {
+      denomination: d,
+    });
   }
 
   private updateChipPalette() {
@@ -759,6 +785,12 @@ export default class RouletteScene extends Phaser.Scene {
       return;
     }
 
+    // Track bet reset
+    trackGameEvent('bets_reset', 'roulette', {
+      bet_count: this.bets.length,
+      total_value: this.bets.reduce((sum, bet) => sum + bet.denom, 0),
+    });
+
     // Play withdrawal sound
     this.withdrawalSound.play();
 
@@ -778,6 +810,9 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   private buildInfoUI() {
+    // Track info modal opened
+    trackGameEvent('info_modal_opened', 'roulette');
+
     // Create container first
     this.infoContainer = this.add
       .container(0, 0)
@@ -1173,6 +1208,9 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   private hideInfoUI() {
+    // Track info modal closed
+    trackGameEvent('info_modal_closed', 'roulette');
+
     if (this.infoContainer) {
       this.infoContainer.setVisible(false);
       // Clean up the container properly
@@ -1260,12 +1298,18 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   private showPurchaseUI() {
+    // Track purchase modal opened
+    trackGameEvent('purchase_modal_opened', 'roulette');
+
     this.purchaseCounts = { 1: 0, 5: 0, 25: 0, 100: 0 };
     this.updatePurchaseUI();
     this.purchaseContainer.setVisible(true);
   }
 
   private hidePurchaseUI() {
+    // Track purchase modal closed
+    trackGameEvent('purchase_modal_closed', 'roulette');
+
     this.purchaseContainer.setVisible(false);
   }
 
@@ -1320,6 +1364,14 @@ export default class RouletteScene extends Phaser.Scene {
       const dr = await debit(total);
       if (dr.success) {
         const { addChips } = useGameStore.getState();
+
+        // Track chip purchase
+        Object.entries(this.purchaseCounts).forEach(([den, count]) => {
+          if (count > 0) {
+            trackChipPurchase(Number(den) * count, `chip_${den}`);
+          }
+        });
+
         // Add chips to store
         Object.entries(this.purchaseCounts).forEach(([den, c]) => {
           addChips(Number(den), c);
@@ -1336,6 +1388,9 @@ export default class RouletteScene extends Phaser.Scene {
     const total = getTotalChipValue();
 
     if (total > 0) {
+      // Track withdrawal
+      trackWithdrawal(total);
+
       // Play withdrawal sound
       this.withdrawalSound.play();
 
@@ -1370,6 +1425,14 @@ export default class RouletteScene extends Phaser.Scene {
       this.outcomeText.setText('Place at least one bet!');
       return;
     }
+
+    // Track spin started
+    const totalBetAmount = this.bets.reduce((sum, bet) => sum + bet.denom, 0);
+    trackGameEvent('spin_started', 'roulette', {
+      bet_count: this.bets.length,
+      total_bet_amount: totalBetAmount,
+    });
+
     this.spinSound.play();
     // RNG draw
     const { seed } = await initRNG('roulette');
@@ -1427,6 +1490,7 @@ export default class RouletteScene extends Phaser.Scene {
   private async resolveBets(win: number) {
     let totalWon = 0;
     let winningBets = 0;
+    const totalBetAmount = this.bets.reduce((sum, bet) => sum + bet.denom, 0);
     const { addChips } = useGameStore.getState();
 
     this.bets.forEach((b) => {
@@ -1440,6 +1504,20 @@ export default class RouletteScene extends Phaser.Scene {
     });
 
     this.bets = [];
+
+    // Track game result
+    const result = totalWon > 0 ? 'win' : 'lose';
+    trackGameResult(result, totalBetAmount, 'roulette', totalWon);
+
+    // Track specific spin result
+    trackGameEvent('spin_completed', 'roulette', {
+      winning_number: win,
+      winning_color: this.getNumberColor(win),
+      total_bet_amount: totalBetAmount,
+      total_won: totalWon,
+      winning_bets: winningBets,
+      result,
+    });
 
     if (totalWon > 0) {
       this.payoutSound.play();

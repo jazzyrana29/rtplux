@@ -16,6 +16,7 @@
     "build:assets": "npm run clean:assets && ts-node scripts/pack-assets.ts"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/bottom-tabs": "^6.5.0",
     "@react-navigation/native": "^6.1.0",
     "@react-navigation/stack": "^6.3.0",
@@ -27,11 +28,12 @@
     "nativewind": "^4.0.1",
     "next": "^15.3.4",
     "phaser": "^3.90.0",
-    "posthog-react-native": "^3.0.0",
+    "posthog-react-native": "^3.16.1",
     "react": "18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^13.5.0",
     "react-native": "0.73.0",
+    "react-native-device-info": "^14.0.4",
     "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.14.0",
     "react-native-reanimated": "~3.6.0",
