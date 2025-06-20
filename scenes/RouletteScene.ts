@@ -579,14 +579,21 @@ export default class RouletteScene extends Phaser.Scene {
     if (won > 0) {
       this.payoutSound.play();
       this.outcomeText.setText(`Hit +${won} chips`);
-      this.add
+      const confetti = this.add
         .sprite(
           this.tableX + this.tableW / 2,
           this.tableY + this.tableH / 2,
           'confetti'
         )
-        .play('confettiBurst')
         .setScale(1.5);
+
+      // after 2 seconds, destroy it
+      this.time.delayedCall(
+        2000, // delay in ms
+        () => confetti.destroy(), // callback
+        [], // args
+        this // callback context
+      );
     } else {
       this.outcomeText.setText(`No hits`);
     }
