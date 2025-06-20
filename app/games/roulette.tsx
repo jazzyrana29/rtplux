@@ -1,3 +1,5 @@
+// src/app/(games)/RouletteGame.tsx
+
 'use client';
 
 import React, { useEffect, useRef } from 'react';
@@ -31,13 +33,9 @@ const RouletteGame: React.FC = () => {
       <h1 className="text-5xl font-extrabold text-yellow-400 mb-6">
         🎰 Custom Phaser Roulette
       </h1>
-
       <div
         ref={containerRef}
-        className="roulette-container relative rounded-2xl
-                   border-8 border-yellow-500
-                   shadow-[0_0_20px_rgba(0,0,0,0.8)]
-                   overflow-visible"
+        className="rounded-2xl border-8 border-yellow-500 shadow-[0_0_20px_rgba(0,0,0,0.8)] overflow-visible"
         style={{
           width: 800,
           height: 600,
@@ -45,10 +43,9 @@ const RouletteGame: React.FC = () => {
           transition: 'transform 0.3s ease',
         }}
       />
-
       <p className="mt-4 text-gray-300 text-center max-w-lg">
-        Hover over SPIN to zoom the entire board and border, click to play. Wins
-        on odd numbers (except 0). Audio & animations loaded from your assets!
+        Select your chip, click numbers to bet, “Clear Bets” to refund, then
+        “SPIN” to play. Wins pay 35:1 + stake!
       </p>
     </div>
   );
