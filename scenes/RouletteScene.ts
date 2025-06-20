@@ -9,6 +9,13 @@ import {
   trackGameResult,
   trackWithdrawal,
 } from '../lib/posthog';
+import {
+  trackAPIError,
+  trackError,
+  trackGameError,
+  trackPerformance,
+  trackUserAction,
+} from '../lib/sentry';
 
 type BetType =
   | 'straight'
@@ -87,146 +94,272 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   preload(): void {
-    // Track game loading
-    trackGameEvent('game_loading_started', 'roulette');
+    const startTime = performance.now();
 
-    // Load chip atlas
-    this.load.atlas(
-      'chips',
-      '/public/assets/games/roulette/chips.png',
-      '/public/assets/games/roulette/chips.json'
-    );
-    // Load spin button
-    this.load.image(
-      'spinButton',
-      '/public/assets/games/roulette/spin_button.webp'
-    );
-    // Load wheel sprites
-    this.load.atlas(
-      'rouletteSprites',
-      '/public/assets/games/roulette/rouletteSprites.webp',
-      '/public/assets/games/roulette/rouletteSprites.json'
-    );
-    // Load confetti atlas
-    this.load.atlas(
-      'confetti',
-      '/public/assets/games/roulette/confetti-0.webp',
-      '/public/assets/games/roulette/confetti-0.json'
-    );
-    // Load digits atlas for result display (optimized assets)
-    this.load.atlas(
-      'digits',
-      '/public/assets/games/roulette/digitAtlas.png',
-      '/public/assets/games/roulette/digitAtlas.json'
-    );
-    // Load sounds
-    this.load.audio(
-      'spinSound',
-      '/public/assets/games/roulette/audio/roulette_spin.mp3'
-    );
-    this.load.audio(
-      'dropSound',
-      '/public/assets/games/roulette/audio/ball_drop_click.mp3'
-    );
-    this.load.audio(
-      'payoutSound',
-      '/public/assets/games/roulette/audio/payout_jingle.mp3'
-    );
-    this.load.audio(
-      'buyChipsSound',
-      '/public/assets/games/roulette/audio/buy_chips.mp3'
-    );
-    this.load.audio(
-      'withdrawalSound',
-      '/public/assets/games/roulette/audio/withdrawal.mp3'
-    );
+    try {
+      // Track game loading
+      trackGameEvent('game_loading_started', 'roulette');
+      trackUserAction('roulette_preload_started');
+
+      // Load chip atlas
+      this.load.atlas(
+        'chips',
+        '/public/assets/games/roulette/chips.png',
+        '/public/assets/games/roulette/chips.json'
+      );
+      // Load spin button
+      this.load.image(
+        'spinButton',
+        '/public/assets/games/roulette/spin_button.webp'
+      );
+      // Load wheel sprites
+      this.load.atlas(
+        'rouletteSprites',
+        '/public/assets/games/roulette/rouletteSprites.webp',
+        '/public/assets/games/roulette/rouletteSprites.json'
+      );
+      // Load confetti atlas
+      this.load.atlas(
+        'confetti',
+        '/public/assets/games/roulette/confetti-0.webp',
+        '/public/assets/games/roulette/confetti-0.json'
+      );
+      // Load digits atlas for result display (optimized assets)
+      this.load.atlas(
+        'digits',
+        '/public/assets/games/roulette/digitAtlas.png',
+        '/public/assets/games/roulette/digitAtlas.json'
+      );
+      // Load sounds
+      this.load.audio(
+        'spinSound',
+        '/public/assets/games/roulette/audio/roulette_spin.mp3'
+      );
+      this.load.audio(
+        'dropSound',
+        '/public/assets/games/roulette/audio/ball_drop_click.mp3'
+      );
+      this.load.audio(
+        'payoutSound',
+        '/public/assets/games/roulette/audio/payout_jingle.mp3'
+      );
+      this.load.audio(
+        'buyChipsSound',
+        '/public/assets/games/roulette/audio/buy_chips.mp3'
+      );
+      this.load.audio(
+        'withdrawalSound',
+        '/public/assets/games/roulette/audio/withdrawal.mp3'
+      );
+
+      // Track loading completion
+      this.load.on('complete', () => {
+        const loadTime = performance.now() - startTime;
+        trackPerformance('roulette_assets_loaded', loadTime);
+        trackUserAction('roulette_preload_completed', { loadTime });
+      });
+
+      // Track loading errors
+      this.load.on('loaderror', (file: any) => {
+        const error = new Error(`Failed to load asset: ${file.key}`);
+        trackGameError(error, 'roulette', {
+          asset: file.key,
+          url: file.url,
+          step: 'asset_loading',
+        });
+      });
+    } catch (error) {
+      trackGameError(error as Error, 'roulette', { step: 'preload' });
+      throw error;
+    }
   }
 
   async create(): Promise<void> {
-    // Track game loaded
-    trackGameEvent('game_loaded', 'roulette');
+    const startTime = performance.now();
 
-    // Initialize sounds
-    this.spinSound = this.sound.add('spinSound');
-    this.dropSound = this.sound.add('dropSound');
-    this.payoutSound = this.sound.add('payoutSound');
-    this.buyChipsSound = this.sound.add('buyChipsSound');
-    this.withdrawalSound = this.sound.add('withdrawalSound');
+    try {
+      // Track game loaded
+      trackGameEvent('game_loaded', 'roulette');
+      trackUserAction('roulette_create_started');
 
-    // Draw table and calculate metrics
-    this.drawTable();
+      // Initialize sounds with error handling
+      try {
+        this.spinSound = this.sound.add('spinSound');
+        this.dropSound = this.sound.add('dropSound');
+        this.payoutSound = this.sound.add('payoutSound');
+        this.buyChipsSound = this.sound.add('buyChipsSound');
+        this.withdrawalSound = this.sound.add('withdrawalSound');
+        trackUserAction('roulette_sounds_initialized');
+      } catch (soundError) {
+        trackGameError(soundError as Error, 'roulette', {
+          step: 'sound_initialization',
+        });
+        // Continue without sounds
+      }
 
-    // Get balance from store and display
-    const { balance } = useGameStore.getState();
-    this.balanceText = this.add
-      .text(20, 20, `Balance: $${balance}`, {
-        fontSize: '24px',
-        color: '#ffffff',
-        fontStyle: 'bold',
-      })
-      .setShadow(2, 2, '#000', 2);
+      // Draw table and calculate metrics
+      try {
+        this.drawTable();
+        trackUserAction('roulette_table_drawn');
+      } catch (tableError) {
+        trackGameError(tableError as Error, 'roulette', {
+          step: 'table_drawing',
+        });
+        throw tableError;
+      }
 
-    // Outcome text - position at top left below balance
-    this.outcomeText = this.add
-      .text(20, 60, '', {
-        fontSize: '18px',
-        color: '#ffff00',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0, 0);
+      // Get balance from store and display
+      try {
+        const { balance } = useGameStore.getState();
+        this.balanceText = this.add
+          .text(20, 20, `Balance: $${balance}`, {
+            fontSize: '24px',
+            color: '#ffffff',
+            fontStyle: 'bold',
+          })
+          .setShadow(2, 2, '#000', 2);
 
-    // Build UI controls
-    this.createTopButtons();
-    this.drawChipPalette();
-    this.createSpinButton();
+        // Outcome text - position at top left below balance
+        this.outcomeText = this.add
+          .text(20, 60, '', {
+            fontSize: '18px',
+            color: '#ffff00',
+            fontStyle: 'bold',
+          })
+          .setOrigin(0, 0);
 
-    // Enable betting on table
-    this.enableTableBetting();
+        trackUserAction('roulette_ui_texts_created', { balance });
+      } catch (uiError) {
+        trackGameError(uiError as Error, 'roulette', { step: 'ui_creation' });
+        throw uiError;
+      }
 
-    // Build purchase overlay (hidden)
-    this.buildPurchaseUI();
+      // Build UI controls
+      try {
+        this.createTopButtons();
+        this.drawChipPalette();
+        this.createSpinButton();
+        trackUserAction('roulette_controls_created');
+      } catch (controlsError) {
+        trackGameError(controlsError as Error, 'roulette', {
+          step: 'controls_creation',
+        });
+        throw controlsError;
+      }
 
-    // Prepare confetti animation
-    if (this.textures.exists('confetti')) {
-      this.anims.create({
-        key: 'confettiBurst',
-        frames: this.anims.generateFrameNames('confetti', {
-          start: 0,
-          end: 59,
-          prefix: 'confetti_frames/frame_',
-          suffix: '.png',
-          zeroPad: 3,
-        }),
-        frameRate: 30,
-        repeat: 0,
+      // Enable betting on table
+      try {
+        this.enableTableBetting();
+        trackUserAction('roulette_betting_enabled');
+      } catch (bettingError) {
+        trackGameError(bettingError as Error, 'roulette', {
+          step: 'betting_setup',
+        });
+        throw bettingError;
+      }
+
+      // Build purchase overlay (hidden)
+      try {
+        this.buildPurchaseUI();
+        trackUserAction('roulette_purchase_ui_built');
+      } catch (purchaseError) {
+        trackGameError(purchaseError as Error, 'roulette', {
+          step: 'purchase_ui_creation',
+        });
+        // Continue without purchase UI
+      }
+
+      // Prepare confetti animation
+      try {
+        if (this.textures.exists('confetti')) {
+          this.anims.create({
+            key: 'confettiBurst',
+            frames: this.anims.generateFrameNames('confetti', {
+              start: 0,
+              end: 59,
+              prefix: 'confetti_frames/frame_',
+              suffix: '.png',
+              zeroPad: 3,
+            }),
+            frameRate: 30,
+            repeat: 0,
+          });
+          trackUserAction('roulette_confetti_animation_created');
+        }
+      } catch (confettiError) {
+        trackGameError(confettiError as Error, 'roulette', {
+          step: 'confetti_animation',
+        });
+        // Continue without confetti
+      }
+
+      // Subscribe to store changes for real-time updates
+      try {
+        this.subscribeToStoreChanges();
+        trackUserAction('roulette_store_subscription_setup');
+      } catch (storeError) {
+        trackGameError(storeError as Error, 'roulette', {
+          step: 'store_subscription',
+        });
+        // Continue without store subscription
+      }
+
+      const createTime = performance.now() - startTime;
+      trackPerformance('roulette_scene_creation', createTime);
+
+      // Track game session started
+      const { balance } = useGameStore.getState();
+      trackGameEvent('game_session_started', 'roulette', {
+        initial_balance: balance,
       });
+      trackUserAction('roulette_create_completed', {
+        createTime,
+        balance,
+      });
+    } catch (error) {
+      trackGameError(error as Error, 'roulette', {
+        step: 'create_method',
+        startTime,
+      });
+      throw error;
     }
-
-    // Subscribe to store changes for real-time updates
-    this.subscribeToStoreChanges();
-
-    // Track game session started
-    trackGameEvent('game_session_started', 'roulette', {
-      initial_balance: balance,
-    });
   }
 
   private subscribeToStoreChanges() {
-    // Subscribe to store changes
-    useGameStore.subscribe((state, prevState) => {
-      // Check if balance changed
-      if (state.balance !== prevState.balance) {
-        this.balanceText.setText(`Balance: $${state.balance}`);
-      }
+    try {
+      // Subscribe to store changes
+      useGameStore.subscribe((state, prevState) => {
+        try {
+          // Check if balance changed
+          if (state.balance !== prevState.balance) {
+            this.balanceText.setText(`Balance: $${state.balance}`);
+            trackUserAction('balance_updated', {
+              oldBalance: prevState.balance,
+              newBalance: state.balance,
+            });
+          }
 
-      // Check if chip counts changed
-      if (
-        JSON.stringify(state.chipCounts) !==
-        JSON.stringify(prevState.chipCounts)
-      ) {
-        this.updateChipPalette();
-      }
-    });
+          // Check if chip counts changed
+          if (
+            JSON.stringify(state.chipCounts) !==
+            JSON.stringify(prevState.chipCounts)
+          ) {
+            this.updateChipPalette();
+            trackUserAction('chip_counts_updated', {
+              oldCounts: prevState.chipCounts,
+              newCounts: state.chipCounts,
+            });
+          }
+        } catch (subscriptionError) {
+          trackError(subscriptionError as Error, {
+            context: 'store_subscription_callback',
+          });
+        }
+      });
+    } catch (error) {
+      trackError(error as Error, { context: 'store_subscription_setup' });
+      throw error;
+    }
   }
 
   private drawTable() {
@@ -536,73 +669,104 @@ export default class RouletteScene extends Phaser.Scene {
     numbers: number[],
     payout: number
   ) {
-    const { chipCounts, removeChips } = useGameStore.getState();
+    try {
+      const { chipCounts, removeChips } = useGameStore.getState();
 
-    if (chipCounts[this.selectedDenom] <= 0) {
-      this.outcomeText.setText(`No $${this.selectedDenom} chips left!`);
-      return;
-    }
-
-    // Track bet placement
-    trackBetPlaced(this.selectedDenom, betType, 'roulette');
-
-    // Play buy chips sound when placing a bet
-    this.buyChipsSound.play();
-
-    // Remove chip from store
-    removeChips(this.selectedDenom, 1);
-
-    // Determine chip placement position
-    let cx: number, cy: number;
-
-    if (betType === 'straight') {
-      if (num === 0) {
-        cx = this.tableX + this.tableW / 2;
-        cy = this.tableY + this.cellH / 2;
-      } else {
-        const row = Math.floor((num! - 1) / 3);
-        const col = (num! - 1) % 3;
-        cx = this.tableX + col * this.cellW + this.cellW / 2;
-        cy = this.tableY + this.cellH + row * this.cellH + this.cellH / 2;
+      if (chipCounts[this.selectedDenom] <= 0) {
+        this.outcomeText.setText(`No $${this.selectedDenom} chips left!`);
+        trackUserAction('bet_placement_failed', {
+          reason: 'insufficient_chips',
+          denomination: this.selectedDenom,
+        });
+        return;
       }
-    } else {
-      // Position chips on outside betting areas
-      cx = this.getOutsideBetPosition(betType).x;
-      cy = this.getOutsideBetPosition(betType).y;
+
+      // Track bet placement
+      trackBetPlaced(this.selectedDenom, betType, 'roulette');
+      trackUserAction('bet_placed', {
+        betType,
+        denomination: this.selectedDenom,
+        numbers,
+        payout,
+        number: num,
+      });
+
+      // Play buy chips sound when placing a bet
+      try {
+        this.buyChipsSound.play();
+      } catch (soundError) {
+        trackError(soundError as Error, { context: 'bet_placement_sound' });
+      }
+
+      // Remove chip from store
+      removeChips(this.selectedDenom, 1);
+
+      // Determine chip placement position
+      let cx: number, cy: number;
+
+      if (betType === 'straight') {
+        if (num === 0) {
+          cx = this.tableX + this.tableW / 2;
+          cy = this.tableY + this.cellH / 2;
+        } else {
+          const row = Math.floor((num! - 1) / 3);
+          const col = (num! - 1) % 3;
+          cx = this.tableX + col * this.cellW + this.cellW / 2;
+          cy = this.tableY + this.cellH + row * this.cellH + this.cellH / 2;
+        }
+      } else {
+        // Position chips on outside betting areas
+        const position = this.getOutsideBetPosition(betType);
+        cx = position.x;
+        cy = position.y;
+      }
+
+      // Compute multi-chip offsets for same bet area
+      const existing = this.bets.filter(
+        (b) =>
+          b.betType === betType &&
+          (betType === 'straight' ? b.number === num : true)
+      ).length;
+      const offsets: [number, number][] = [
+        [-0.2, -0.2],
+        [0.2, -0.2],
+        [-0.2, 0.2],
+        [0.2, 0.2],
+      ];
+      const [ox, oy] = offsets[existing % offsets.length];
+
+      // Chip size fits inside the cell
+      const iconSize = Math.min(this.cellW, this.cellH) * 0.5;
+      const x = cx + ox * this.cellW * 0.4;
+      const y = cy + oy * this.cellH * 0.4;
+
+      const sprite = this.add
+        .image(x, y, 'chips', `chip${this.selectedDenom}.png`)
+        .setDisplaySize(iconSize, iconSize)
+        .setDepth(1);
+
+      this.bets.push({
+        number: num,
+        betType,
+        numbers,
+        denom: this.selectedDenom,
+        sprite,
+        payout,
+      });
+
+      trackUserAction('bet_placed_successfully', {
+        totalBets: this.bets.length,
+        betValue: this.selectedDenom,
+      });
+    } catch (error) {
+      trackGameError(error as Error, 'roulette', {
+        step: 'bet_placement',
+        betType,
+        denomination: this.selectedDenom,
+        number: num,
+      });
+      this.outcomeText.setText('Error placing bet');
     }
-
-    // Compute multi-chip offsets for same bet area
-    const existing = this.bets.filter(
-      (b) =>
-        b.betType === betType &&
-        (betType === 'straight' ? b.number === num : true)
-    ).length;
-    const offsets: [number, number][] = [
-      [-0.2, -0.2],
-      [0.2, -0.2],
-      [-0.2, 0.2],
-      [0.2, 0.2],
-    ];
-    const [ox, oy] = offsets[existing % offsets.length];
-
-    // Chip size fits inside the cell
-    const iconSize = Math.min(this.cellW, this.cellH) * 0.5;
-    const x = cx + ox * this.cellW * 0.4;
-    const y = cy + oy * this.cellH * 0.4;
-
-    const sprite = this.add
-      .image(x, y, 'chips', `chip${this.selectedDenom}.png`)
-      .setDisplaySize(iconSize, iconSize)
-      .setDepth(1);
-
-    this.bets.push({
-      number: num,
-      betType,
-      numbers,
-      denom: this.selectedDenom,
-      sprite,
-      payout,
-    });
   }
 
   private getOutsideBetPosition(betType: BetType): { x: number; y: number } {
@@ -715,8 +879,6 @@ export default class RouletteScene extends Phaser.Scene {
   private createTopButtons() {
     const buttonY = 20;
     const buttonWidth = 100;
-    const buttonHeight = 35;
-    const buttonSpacing = 10;
 
     // Buy chips button - fixed width
     this.buyBtn = this.add
@@ -807,6 +969,475 @@ export default class RouletteScene extends Phaser.Scene {
     this.bets = [];
 
     this.outcomeText.setText(`Reset ${betCount} bets - chips returned`);
+  }
+
+  private createSpinButton() {
+    const chipAreaWidth = Math.min(this.scale.width * 0.8, 600);
+    const chipAreaX = (this.scale.width - chipAreaWidth) / 2;
+    const segW = chipAreaWidth / 5;
+    const x = chipAreaX + segW * 4.5;
+    const y = this.scale.height - 100; // Match chip position
+    const size = Math.min(segW * 0.8, 70); // Match chip size
+    this.add
+      .image(x, y, 'spinButton')
+      .setDisplaySize(size, size)
+      .setInteractive({ cursor: 'pointer' })
+      .on('pointerup', () => this.handleSpin());
+  }
+
+  private async handleSpin() {
+    const startTime = performance.now();
+
+    try {
+      if (this.bets.length === 0) {
+        this.outcomeText.setText('Place at least one bet!');
+        trackUserAction('spin_failed', { reason: 'no_bets' });
+        return;
+      }
+
+      // Track spin started
+      const totalBetAmount = this.bets.reduce((sum, bet) => sum + bet.denom, 0);
+      trackGameEvent('spin_started', 'roulette', {
+        bet_count: this.bets.length,
+        total_bet_amount: totalBetAmount,
+      });
+      trackUserAction('spin_started', {
+        betCount: this.bets.length,
+        totalBetAmount,
+        bets: this.bets.map((b) => ({ betType: b.betType, denom: b.denom })),
+      });
+
+      try {
+        this.spinSound.play();
+      } catch (soundError) {
+        trackError(soundError as Error, { context: 'spin_sound' });
+      }
+
+      // RNG draw with error handling
+      let win: number;
+      try {
+        const { seed } = await initRNG('roulette');
+        win = Number.parseInt(seed.slice(-2), 36) % 37;
+        trackUserAction('rng_generated', { seed, winningNumber: win });
+      } catch (rngError) {
+        trackAPIError('initRNG', rngError as Error);
+        // Fallback to local random
+        win = Math.floor(Math.random() * 37);
+        trackUserAction('rng_fallback_used', { winningNumber: win });
+      }
+
+      // Wheel animation with error handling
+      try {
+        const wheel = this.add
+          .sprite(
+            this.tableX + this.tableW / 2,
+            this.tableY + this.tableH / 2,
+            'rouletteSprites',
+            'sprite.png'
+          )
+          .setDisplaySize(this.tableW * 0.45, this.tableW * 0.45)
+          .setDepth(1000);
+
+        this.tweens.add({
+          targets: wheel,
+          angle: 360 * 5 + (360 / 37) * win,
+          duration: 3000,
+          ease: 'Cubic.easeOut',
+          onComplete: () => {
+            try {
+              wheel.destroy();
+              this.dropSound.play();
+              this.showResultDigits(win);
+              this.resolveBets(win);
+
+              const spinTime = performance.now() - startTime;
+              trackPerformance('roulette_spin_complete', spinTime);
+              trackUserAction('spin_animation_completed', {
+                winningNumber: win,
+                spinTime,
+              });
+            } catch (completionError) {
+              trackGameError(completionError as Error, 'roulette', {
+                step: 'spin_completion',
+                winningNumber: win,
+              });
+            }
+          },
+        });
+      } catch (animationError) {
+        trackGameError(animationError as Error, 'roulette', {
+          step: 'wheel_animation',
+          winningNumber: win,
+        });
+        // Fallback: resolve bets immediately
+        this.showResultDigits(win);
+        this.resolveBets(win);
+      }
+    } catch (error) {
+      trackGameError(error as Error, 'roulette', {
+        step: 'handle_spin',
+        betCount: this.bets.length,
+      });
+      this.outcomeText.setText('Error during spin');
+    }
+  }
+
+  private showResultDigits(win: number) {
+    const digits = win.toString().split('');
+
+    this.children.list
+      .filter((c) => c.name === 'resultDigit')
+      .forEach((c) => c.destroy());
+
+    const size = Math.min(this.cellH, 60); // Responsive size
+    const totalWidth = size * digits.length;
+    const startX = (this.scale.width - totalWidth) / 2; // Center horizontally
+    const y = 100; // Fixed position at top center
+
+    digits.forEach((d, i) => {
+      this.add
+        .image(
+          startX + i * size,
+          y,
+          'digits',
+          `casino_digits_pngs/digit_${d}.png`
+        )
+        .setDisplaySize(size, size)
+        .setDepth(500)
+        .setName('resultDigit');
+    });
+  }
+
+  private async resolveBets(win: number) {
+    try {
+      let totalWon = 0;
+      let winningBets = 0;
+      const totalBetAmount = this.bets.reduce((sum, bet) => sum + bet.denom, 0);
+      const { addChips } = useGameStore.getState();
+
+      this.bets.forEach((b) => {
+        try {
+          b.sprite.destroy();
+          if (b.numbers.includes(win)) {
+            const winAmount = b.denom * (b.payout + 1); // +1 to return original bet
+            totalWon += winAmount;
+            addChips(b.denom, b.payout + 1); // Add payout + original bet to store
+            winningBets++;
+          }
+        } catch (betError) {
+          trackError(betError as Error, {
+            context: 'bet_resolution',
+            betType: b.betType,
+            denomination: b.denom,
+          });
+        }
+      });
+
+      this.bets = [];
+
+      // Track game result
+      const result = totalWon > 0 ? 'win' : 'lose';
+      trackGameResult(result, totalBetAmount, 'roulette', totalWon);
+
+      // Track specific spin result
+      trackGameEvent('spin_completed', 'roulette', {
+        winning_number: win,
+        winning_color: this.getNumberColor(win),
+        total_bet_amount: totalBetAmount,
+        total_won: totalWon,
+        winning_bets: winningBets,
+        result,
+      });
+
+      trackUserAction('bets_resolved', {
+        winningNumber: win,
+        winningColor: this.getNumberColor(win),
+        totalBetAmount,
+        totalWon,
+        winningBets,
+        result,
+      });
+
+      if (totalWon > 0) {
+        try {
+          this.payoutSound.play();
+        } catch (soundError) {
+          trackError(soundError as Error, { context: 'payout_sound' });
+        }
+
+        this.outcomeText.setText(
+          `Hit! Won +${totalWon} chips (${winningBets} winning bets)`
+        );
+
+        try {
+          const confetti = this.add
+            .sprite(
+              this.tableX + this.tableW / 2,
+              this.tableY + this.tableH / 2,
+              'confetti'
+            )
+            .setScale(1.5);
+
+          this.time.delayedCall(2000, () => confetti.destroy(), [], this);
+        } catch (confettiError) {
+          trackError(confettiError as Error, { context: 'confetti_animation' });
+        }
+      } else {
+        this.outcomeText.setText(
+          `No hits - Number: ${win} (${this.getNumberColor(win)})`
+        );
+      }
+    } catch (error) {
+      trackGameError(error as Error, 'roulette', {
+        step: 'bet_resolution',
+        winningNumber: win,
+      });
+      this.outcomeText.setText('Error resolving bets');
+    }
+  }
+
+  private getNumberColor(num: number): string {
+    if (num === 0) return 'GREEN';
+    return this.RED_NUMBERS.includes(num) ? 'RED' : 'BLACK';
+  }
+
+  private buildPurchaseUI() {
+    this.purchaseContainer = this.add
+      .container(0, 0)
+      .setVisible(false)
+      .setDepth(1000);
+    const overlay = this.add
+      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.6)
+      .setOrigin(0, 0);
+    this.purchaseContainer.add(overlay);
+
+    const pw = this.scale.width * 0.6;
+    const ph = this.scale.height * 0.5;
+    const px = (this.scale.width - pw) / 2;
+    const py = (this.scale.height - ph) / 2;
+    const panel = this.add
+      .rectangle(px, py, pw, ph, 0x003300)
+      .setOrigin(0, 0)
+      .setStrokeStyle(4, 0xffff00);
+    this.purchaseContainer.add(panel);
+
+    const title = this.add
+      .text(this.scale.width / 2, py + 30, 'Buy Chips', {
+        fontSize: '32px',
+        color: '#ffff00',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
+    this.purchaseContainer.add(title);
+
+    const denoms = [1, 5, 25, 100];
+    const startX = px + pw * 0.15;
+    const gapX = (pw * 0.7) / (denoms.length - 1);
+    denoms.forEach((d, i) => {
+      const cx = startX + gapX * i;
+      const cy = py + ph * 0.3;
+      const icon = this.add
+        .image(cx, cy, 'chips', `chip${d}.png`)
+        .setDisplaySize(64, 64)
+        .setInteractive({ cursor: 'pointer' })
+        .on('pointerup', () => this.addPurchase(d));
+      const txt = this.add
+        .text(cx, cy + 50, 'x0', { fontSize: '20px', color: '#fff' })
+        .setOrigin(0.5);
+      this.purchaseContainer.add(icon);
+      this.purchaseContainer.add(txt);
+    });
+
+    this.purchaseTotalText = this.add
+      .text(this.scale.width / 2, py + ph * 0.6, 'Total: $0', {
+        fontSize: '24px',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5);
+    this.purchaseContainer.add(this.purchaseTotalText);
+
+    this.confirmBtn = this.add
+      .text(this.scale.width / 2 - 80, py + ph * 0.8, 'Confirm', {
+        fontSize: '20px',
+        color: '#00ff00',
+        backgroundColor: '#003300',
+        padding: { x: 10, y: 5 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ cursor: 'pointer' })
+      .on('pointerup', () => this.confirmPurchase());
+    this.cancelBtn = this.add
+      .text(this.scale.width / 2 + 80, py + ph * 0.8, 'Cancel', {
+        fontSize: '20px',
+        color: '#ff4444',
+        backgroundColor: '#330000',
+        padding: { x: 10, y: 5 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ cursor: 'pointer' })
+      .on('pointerup', () => this.hidePurchaseUI());
+    this.purchaseContainer.add(this.confirmBtn);
+    this.purchaseContainer.add(this.cancelBtn);
+  }
+
+  private showPurchaseUI() {
+    // Track purchase modal opened
+    trackGameEvent('purchase_modal_opened', 'roulette');
+
+    this.purchaseCounts = { 1: 0, 5: 0, 25: 0, 100: 0 };
+    this.updatePurchaseUI();
+    this.purchaseContainer.setVisible(true);
+  }
+
+  private hidePurchaseUI() {
+    // Track purchase modal closed
+    trackGameEvent('purchase_modal_closed', 'roulette');
+
+    this.purchaseContainer.setVisible(false);
+  }
+
+  private addPurchase(d: number) {
+    const { balance } = useGameStore.getState();
+    const total = Object.entries(this.purchaseCounts).reduce(
+      (s, [den, c]) => s + Number(den) * c,
+      0
+    );
+    if (total + d <= balance) {
+      // Play buy chips sound when adding chips to purchase
+      this.buyChipsSound.play();
+
+      this.purchaseCounts[d]++;
+      this.updatePurchaseUI();
+    }
+  }
+
+  private updatePurchaseUI() {
+    this.purchaseContainer.list.forEach((child) => {
+      if (child instanceof Phaser.GameObjects.Text && /^x\d/.test(child.text)) {
+        const txt = child as Phaser.GameObjects.Text;
+        const xPos = txt.x;
+        const denom = [1, 5, 25, 100].find((d) => {
+          return (
+            this.purchaseContainer.list.find(
+              (c) =>
+                c instanceof Phaser.GameObjects.Image &&
+                (c as Phaser.GameObjects.Image).frame.name === `chip${d}.png` &&
+                Math.abs((c as Phaser.GameObjects.Image).x - xPos) < 2
+            ) != null
+          );
+        });
+        if (denom !== undefined) {
+          txt.setText(`x${this.purchaseCounts[denom]}`);
+        }
+      }
+    });
+    const total = Object.entries(this.purchaseCounts).reduce(
+      (s, [den, c]) => s + Number(den) * c,
+      0
+    );
+    this.purchaseTotalText.setText(`Total: $${total}`);
+  }
+
+  private async confirmPurchase() {
+    try {
+      const total = Object.entries(this.purchaseCounts).reduce(
+        (s, [den, c]) => s + Number(den) * c,
+        0
+      );
+
+      if (total > 0) {
+        trackUserAction('purchase_attempt', {
+          total,
+          counts: this.purchaseCounts,
+        });
+
+        try {
+          const dr = await debit(total);
+          if (dr.success) {
+            const { addChips } = useGameStore.getState();
+
+            // Track chip purchase
+            Object.entries(this.purchaseCounts).forEach(([den, count]) => {
+              if (count > 0) {
+                trackChipPurchase(Number(den) * count, `chip_${den}`);
+              }
+            });
+
+            // Add chips to store
+            Object.entries(this.purchaseCounts).forEach(([den, c]) => {
+              addChips(Number(den), c);
+            });
+
+            this.hidePurchaseUI();
+            trackUserAction('purchase_successful', { total });
+          } else {
+            this.outcomeText.setText(dr.message || 'Purchase failed');
+            trackUserAction('purchase_failed', {
+              total,
+              reason: dr.message || 'unknown',
+            });
+          }
+        } catch (debitError) {
+          trackAPIError('debit', debitError as Error, { amount: total });
+          this.outcomeText.setText('Purchase failed');
+        }
+      }
+    } catch (error) {
+      trackGameError(error as Error, 'roulette', {
+        step: 'purchase_confirmation',
+      });
+      this.outcomeText.setText('Error processing purchase');
+    }
+  }
+
+  private async withdrawChips() {
+    try {
+      const { getTotalChipValue, resetChips } = useGameStore.getState();
+      const total = getTotalChipValue();
+
+      if (total > 0) {
+        trackUserAction('withdrawal_attempt', { total });
+
+        // Track withdrawal
+        trackWithdrawal(total);
+
+        // Play withdrawal sound
+        try {
+          this.withdrawalSound.play();
+        } catch (soundError) {
+          trackError(soundError as Error, { context: 'withdrawal_sound' });
+        }
+
+        try {
+          const cr = await credit(total);
+          if (cr.success) {
+            resetChips();
+            this.outcomeText.setText(`Withdrew ${total} chips`);
+            trackUserAction('withdrawal_successful', { total });
+          } else {
+            this.outcomeText.setText('Withdrawal failed');
+            trackUserAction('withdrawal_failed', {
+              total,
+              reason: 'credit_failed',
+            });
+          }
+        } catch (creditError) {
+          trackAPIError('credit', creditError as Error, { amount: total });
+          this.outcomeText.setText('Withdrawal failed');
+        }
+      } else {
+        this.outcomeText.setText('No chips to withdraw.');
+        trackUserAction('withdrawal_failed', {
+          total: 0,
+          reason: 'no_chips',
+        });
+      }
+    } catch (error) {
+      trackGameError(error as Error, 'roulette', {
+        step: 'chip_withdrawal',
+      });
+      this.outcomeText.setText('Error processing withdrawal');
+    }
   }
 
   private buildInfoUI() {
@@ -1216,332 +1847,5 @@ export default class RouletteScene extends Phaser.Scene {
       // Clean up the container properly
       this.infoContainer.removeAll(true);
     }
-  }
-
-  private buildPurchaseUI() {
-    this.purchaseContainer = this.add
-      .container(0, 0)
-      .setVisible(false)
-      .setDepth(1000);
-    const overlay = this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.6)
-      .setOrigin(0, 0);
-    this.purchaseContainer.add(overlay);
-
-    const pw = this.scale.width * 0.6;
-    const ph = this.scale.height * 0.5;
-    const px = (this.scale.width - pw) / 2;
-    const py = (this.scale.height - ph) / 2;
-    const panel = this.add
-      .rectangle(px, py, pw, ph, 0x003300)
-      .setOrigin(0, 0)
-      .setStrokeStyle(4, 0xffff00);
-    this.purchaseContainer.add(panel);
-
-    const title = this.add
-      .text(this.scale.width / 2, py + 30, 'Buy Chips', {
-        fontSize: '32px',
-        color: '#ffff00',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5);
-    this.purchaseContainer.add(title);
-
-    const denoms = [1, 5, 25, 100];
-    const startX = px + pw * 0.15;
-    const gapX = (pw * 0.7) / (denoms.length - 1);
-    denoms.forEach((d, i) => {
-      const cx = startX + gapX * i;
-      const cy = py + ph * 0.3;
-      const icon = this.add
-        .image(cx, cy, 'chips', `chip${d}.png`)
-        .setDisplaySize(64, 64)
-        .setInteractive({ cursor: 'pointer' })
-        .on('pointerup', () => this.addPurchase(d));
-      const txt = this.add
-        .text(cx, cy + 50, 'x0', { fontSize: '20px', color: '#fff' })
-        .setOrigin(0.5);
-      this.purchaseContainer.add(icon);
-      this.purchaseContainer.add(txt);
-    });
-
-    this.purchaseTotalText = this.add
-      .text(this.scale.width / 2, py + ph * 0.6, 'Total: $0', {
-        fontSize: '24px',
-        color: '#ffffff',
-      })
-      .setOrigin(0.5);
-    this.purchaseContainer.add(this.purchaseTotalText);
-
-    this.confirmBtn = this.add
-      .text(this.scale.width / 2 - 80, py + ph * 0.8, 'Confirm', {
-        fontSize: '20px',
-        color: '#00ff00',
-        backgroundColor: '#003300',
-        padding: { x: 10, y: 5 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ cursor: 'pointer' })
-      .on('pointerup', () => this.confirmPurchase());
-    this.cancelBtn = this.add
-      .text(this.scale.width / 2 + 80, py + ph * 0.8, 'Cancel', {
-        fontSize: '20px',
-        color: '#ff4444',
-        backgroundColor: '#330000',
-        padding: { x: 10, y: 5 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ cursor: 'pointer' })
-      .on('pointerup', () => this.hidePurchaseUI());
-    this.purchaseContainer.add(this.confirmBtn);
-    this.purchaseContainer.add(this.cancelBtn);
-  }
-
-  private showPurchaseUI() {
-    // Track purchase modal opened
-    trackGameEvent('purchase_modal_opened', 'roulette');
-
-    this.purchaseCounts = { 1: 0, 5: 0, 25: 0, 100: 0 };
-    this.updatePurchaseUI();
-    this.purchaseContainer.setVisible(true);
-  }
-
-  private hidePurchaseUI() {
-    // Track purchase modal closed
-    trackGameEvent('purchase_modal_closed', 'roulette');
-
-    this.purchaseContainer.setVisible(false);
-  }
-
-  private addPurchase(d: number) {
-    const { balance } = useGameStore.getState();
-    const total = Object.entries(this.purchaseCounts).reduce(
-      (s, [den, c]) => s + Number(den) * c,
-      0
-    );
-    if (total + d <= balance) {
-      // Play buy chips sound when adding chips to purchase
-      this.buyChipsSound.play();
-
-      this.purchaseCounts[d]++;
-      this.updatePurchaseUI();
-    }
-  }
-
-  private updatePurchaseUI() {
-    this.purchaseContainer.list.forEach((child) => {
-      if (child instanceof Phaser.GameObjects.Text && /^x\d/.test(child.text)) {
-        const txt = child as Phaser.GameObjects.Text;
-        const xPos = txt.x;
-        const denom = [1, 5, 25, 100].find((d) => {
-          return (
-            this.purchaseContainer.list.find(
-              (c) =>
-                c instanceof Phaser.GameObjects.Image &&
-                (c as Phaser.GameObjects.Image).frame.name === `chip${d}.png` &&
-                Math.abs((c as Phaser.GameObjects.Image).x - xPos) < 2
-            ) != null
-          );
-        });
-        if (denom !== undefined) {
-          txt.setText(`x${this.purchaseCounts[denom]}`);
-        }
-      }
-    });
-    const total = Object.entries(this.purchaseCounts).reduce(
-      (s, [den, c]) => s + Number(den) * c,
-      0
-    );
-    this.purchaseTotalText.setText(`Total: $${total}`);
-  }
-
-  private async confirmPurchase() {
-    const total = Object.entries(this.purchaseCounts).reduce(
-      (s, [den, c]) => s + Number(den) * c,
-      0
-    );
-    if (total > 0) {
-      const dr = await debit(total);
-      if (dr.success) {
-        const { addChips } = useGameStore.getState();
-
-        // Track chip purchase
-        Object.entries(this.purchaseCounts).forEach(([den, count]) => {
-          if (count > 0) {
-            trackChipPurchase(Number(den) * count, `chip_${den}`);
-          }
-        });
-
-        // Add chips to store
-        Object.entries(this.purchaseCounts).forEach(([den, c]) => {
-          addChips(Number(den), c);
-        });
-        this.hidePurchaseUI();
-      } else {
-        this.outcomeText.setText(dr.message || 'Purchase failed');
-      }
-    }
-  }
-
-  private async withdrawChips() {
-    const { getTotalChipValue, resetChips } = useGameStore.getState();
-    const total = getTotalChipValue();
-
-    if (total > 0) {
-      // Track withdrawal
-      trackWithdrawal(total);
-
-      // Play withdrawal sound
-      this.withdrawalSound.play();
-
-      const cr = await credit(total);
-      if (cr.success) {
-        resetChips();
-        this.outcomeText.setText(`Withdrew ${total} chips`);
-      } else {
-        this.outcomeText.setText('Withdrawal failed');
-      }
-    } else {
-      this.outcomeText.setText('No chips to withdraw.');
-    }
-  }
-
-  private createSpinButton() {
-    const chipAreaWidth = Math.min(this.scale.width * 0.8, 600);
-    const chipAreaX = (this.scale.width - chipAreaWidth) / 2;
-    const segW = chipAreaWidth / 5;
-    const x = chipAreaX + segW * 4.5;
-    const y = this.scale.height - 100; // Match chip position
-    const size = Math.min(segW * 0.8, 70); // Match chip size
-    this.add
-      .image(x, y, 'spinButton')
-      .setDisplaySize(size, size)
-      .setInteractive({ cursor: 'pointer' })
-      .on('pointerup', () => this.handleSpin());
-  }
-
-  private async handleSpin() {
-    if (this.bets.length === 0) {
-      this.outcomeText.setText('Place at least one bet!');
-      return;
-    }
-
-    // Track spin started
-    const totalBetAmount = this.bets.reduce((sum, bet) => sum + bet.denom, 0);
-    trackGameEvent('spin_started', 'roulette', {
-      bet_count: this.bets.length,
-      total_bet_amount: totalBetAmount,
-    });
-
-    this.spinSound.play();
-    // RNG draw
-    const { seed } = await initRNG('roulette');
-    const win = Number.parseInt(seed.slice(-2), 36) % 37;
-    // Wheel animation
-    const wheel = this.add
-      .sprite(
-        this.tableX + this.tableW / 2,
-        this.tableY + this.tableH / 2,
-        'rouletteSprites',
-        'sprite.png'
-      )
-      .setDisplaySize(this.tableW * 0.45, this.tableW * 0.45)
-      .setDepth(1000);
-    this.tweens.add({
-      targets: wheel,
-      angle: 360 * 5 + (360 / 37) * win,
-      duration: 3000,
-      ease: 'Cubic.easeOut',
-      onComplete: () => {
-        wheel.destroy();
-        this.dropSound.play();
-        this.showResultDigits(win);
-        this.resolveBets(win);
-      },
-    });
-  }
-
-  private showResultDigits(win: number) {
-    const digits = win.toString().split('');
-
-    this.children.list
-      .filter((c) => c.name === 'resultDigit')
-      .forEach((c) => c.destroy());
-
-    const size = Math.min(this.cellH, 60); // Responsive size
-    const totalWidth = size * digits.length;
-    const startX = (this.scale.width - totalWidth) / 2; // Center horizontally
-    const y = 100; // Fixed position at top center
-
-    digits.forEach((d, i) => {
-      this.add
-        .image(
-          startX + i * size,
-          y,
-          'digits',
-          `casino_digits_pngs/digit_${d}.png`
-        )
-        .setDisplaySize(size, size)
-        .setDepth(500)
-        .setName('resultDigit');
-    });
-  }
-
-  private async resolveBets(win: number) {
-    let totalWon = 0;
-    let winningBets = 0;
-    const totalBetAmount = this.bets.reduce((sum, bet) => sum + bet.denom, 0);
-    const { addChips } = useGameStore.getState();
-
-    this.bets.forEach((b) => {
-      b.sprite.destroy();
-      if (b.numbers.includes(win)) {
-        const winAmount = b.denom * (b.payout + 1); // +1 to return original bet
-        totalWon += winAmount;
-        addChips(b.denom, b.payout + 1); // Add payout + original bet to store
-        winningBets++;
-      }
-    });
-
-    this.bets = [];
-
-    // Track game result
-    const result = totalWon > 0 ? 'win' : 'lose';
-    trackGameResult(result, totalBetAmount, 'roulette', totalWon);
-
-    // Track specific spin result
-    trackGameEvent('spin_completed', 'roulette', {
-      winning_number: win,
-      winning_color: this.getNumberColor(win),
-      total_bet_amount: totalBetAmount,
-      total_won: totalWon,
-      winning_bets: winningBets,
-      result,
-    });
-
-    if (totalWon > 0) {
-      this.payoutSound.play();
-      this.outcomeText.setText(
-        `Hit! Won +${totalWon} chips (${winningBets} winning bets)`
-      );
-      const confetti = this.add
-        .sprite(
-          this.tableX + this.tableW / 2,
-          this.tableY + this.tableH / 2,
-          'confetti'
-        )
-        .setScale(1.5);
-
-      this.time.delayedCall(2000, () => confetti.destroy(), [], this);
-    } else {
-      this.outcomeText.setText(
-        `No hits - Number: ${win} (${this.getNumberColor(win)})`
-      );
-    }
-  }
-
-  private getNumberColor(num: number): string {
-    if (num === 0) return 'GREEN';
-    return this.RED_NUMBERS.includes(num) ? 'RED' : 'BLACK';
   }
 }

@@ -1,68 +1,141 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import RouletteScene from '../../scenes/RouletteScene';
 import { IFrame } from '@/components/IFrame';
 import { useIsFocused } from '@react-navigation/core';
+import {
+  trackError,
+  trackGameError,
+  trackPerformance,
+  trackUserAction,
+} from '../../lib/sentry';
+import * as Sentry from '@sentry/react-native';
 
-const RouletteGame: React.FC = () => {
+const RouletteGameContent: React.FC = () => {
   const phaserRef = useRef<Phaser.Game | null>(null);
   const containerId = 'roulette-phaser-container';
-
-  // Ref to the <IFrame> on web or <WebView> on native
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  // Track whether the iframe (or WebView) content has loaded
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const isFocused = useIsFocused();
 
   useEffect(() => {
-    console.log('iframeLoaded => ', iframeLoaded);
-    console.log('isFocused => ', isFocused);
+    const startTime = performance.now();
 
-    if (isFocused && iframeLoaded && iframeRef.current) {
-      // Destroy existing instance if any
-      phaserRef.current?.destroy(true);
+    try {
+      // Track game initialization
+      trackUserAction('game_initialization', {
+        game: 'roulette',
+        iframeLoaded,
+        isFocused,
+      });
 
-      // On web: iframeRef.current is an <iframe>, so contentWindow.document is available.
-      // On native: iframeRef.current is a <WebView> reference. react-native-webview exposes contentWindow/document.
-      const iframeDoc = iframeRef?.current.contentWindow?.document;
-      if (!iframeDoc) {
-        console.warn('IFrame document not ready yet.');
-        return;
-      }
+      console.log('iframeLoaded => ', iframeLoaded);
+      console.log('isFocused => ', isFocused);
 
-      // Find the <div id="phaser-container"> inside the iframe’s HTML
-      const targetContainer = iframeDoc.getElementById(containerId);
-      if (!targetContainer) {
-        console.warn('Could not find #phaser-container inside IFrame.');
-        return;
-      }
-
-      const config: Phaser.Types.Core.GameConfig = {
-        type: Phaser.AUTO,
-        width: 1024,
-        height: 700,
-        parent: targetContainer,
-
-        scene: [RouletteScene],
-        scale: {
-          mode: Phaser.Scale.ScaleModes.FIT,
-          autoCenter: Phaser.Scale.CENTER_BOTH,
-        },
-        backgroundColor: '#003300',
-      };
-      phaserRef.current = new Phaser.Game(config);
-      // Cleanup when screen loses focus or on unmount
-      return (): void => {
+      if (isFocused && iframeLoaded && iframeRef.current) {
+        // Destroy existing instance if any
         if (phaserRef.current) {
           phaserRef.current.destroy(true);
-          phaserRef.current = null;
+          trackUserAction('phaser_game_destroyed');
         }
-      };
-    } else {
+
+        const iframeDoc = iframeRef?.current.contentWindow?.document;
+        if (!iframeDoc) {
+          const error = new Error('IFrame document not ready yet');
+          trackGameError(error, 'roulette', {
+            step: 'iframe_document_access',
+            iframeLoaded,
+            isFocused,
+          });
+          console.warn('IFrame document not ready yet.');
+          return;
+        }
+
+        const targetContainer = iframeDoc.getElementById(containerId);
+        if (!targetContainer) {
+          const error = new Error(
+            'Could not find #phaser-container inside IFrame'
+          );
+          trackGameError(error, 'roulette', {
+            step: 'container_not_found',
+            containerId,
+          });
+          console.warn('Could not find #phaser-container inside IFrame.');
+          return;
+        }
+
+        const config: Phaser.Types.Core.GameConfig = {
+          type: Phaser.AUTO,
+          width: 1024,
+          height: 700,
+          parent: targetContainer,
+          scene: [RouletteScene],
+          scale: {
+            mode: Phaser.Scale.ScaleModes.FIT,
+            autoCenter: Phaser.Scale.CENTER_BOTH,
+          },
+          backgroundColor: '#003300',
+        };
+
+        try {
+          phaserRef.current = new Phaser.Game(config);
+
+          const initTime = performance.now() - startTime;
+          trackPerformance('phaser_game_initialization', initTime);
+          trackUserAction('phaser_game_created', {
+            initTime,
+            config: {
+              width: config.width,
+              height: config.height,
+              backgroundColor: config.backgroundColor,
+            },
+          });
+        } catch (phaserError) {
+          trackGameError(phaserError as Error, 'roulette', {
+            step: 'phaser_game_creation',
+            config,
+          });
+          throw phaserError;
+        }
+
+        // Cleanup function
+        return (): void => {
+          try {
+            if (phaserRef.current) {
+              phaserRef.current.destroy(true);
+              phaserRef.current = null;
+              trackUserAction('phaser_game_cleanup');
+            }
+          } catch (cleanupError) {
+            trackError(cleanupError as Error, {
+              context: 'phaser_cleanup',
+              game: 'roulette',
+            });
+          }
+        };
+      }
+    } catch (error) {
+      trackGameError(error as Error, 'roulette', {
+        step: 'useEffect_main',
+        iframeLoaded,
+        isFocused,
+        startTime,
+      });
+      console.error('Error in RouletteGame useEffect:', error);
     }
   }, [isFocused, iframeLoaded]);
+
+  const handleIFrameLoad = () => {
+    try {
+      setIframeLoaded(true);
+      trackUserAction('iframe_loaded', { game: 'roulette' });
+    } catch (error) {
+      trackError(error as Error, { context: 'iframe_load_handler' });
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-start min-h-screen bg-gray-900 py-8 px-4">
@@ -73,21 +146,10 @@ const RouletteGame: React.FC = () => {
       {isFocused && (
         <IFrame
           ref={iframeRef}
-          onLoad={() => {
-            setIframeLoaded(true);
-            // if (!posthog) {
-            //   console.warn(
-            //     "PostHog not found in iframe—make sure parent injected it",
-            //   );
-            // } else {
-            //   posthog.capture("Iframe launched");
-            //   console.log("PostHog found in iframe capturing event");
-            // }
-          }}
+          onLoad={handleIFrameLoad}
           allowedOrigin={window.location.origin}
           style={{
             width: 1024,
-
             height: 800,
           }}
         >
@@ -105,11 +167,16 @@ const RouletteGame: React.FC = () => {
         Responsive board: resize your window and the table, chips, and button
         will scale to fit!
         <br />
-        Container now stretches up to 1024×768 (4:3) or your screen’s width,
+        Container now stretches up to 1024×768 (4:3) or your screen's width,
         whichever is smaller.
       </p>
     </div>
   );
 };
+
+// Wrap with Sentry error boundary and profiler
+const RouletteGame = Sentry.withProfiler(Sentry.wrap(RouletteGameContent), {
+  name: 'RouletteGame',
+});
 
 export default RouletteGame;
