@@ -1,0 +1,41 @@
+<!-- public/iframe-template.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width,initial-scale=1" name="viewport" />
+  <style>
+      html, body {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+      }
+
+      #game-container {
+          width: 100%;
+          height: 100%;
+      }
+  </style>
+</head>
+<body>
+<div id="game-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+<script src="/public/roulette.bundle.js"></script>
+<script>
+  // Notify parent we’re ready
+  window.parent.postMessage({ type: 'LOADED' }, '*');
+
+  // Parent → iframe: INIT
+  window.addEventListener('message', ({ data }) => {
+    if (data?.type === 'INIT' && typeof initGame === 'function') {
+      initGame(data.payload);
+    }
+  });
+
+  // In your scene, once you compute win/case, post back:
+  // window.parent.postMessage({ type:'RESULT', payload:{ winAmount, outcomeRNGSeed } }, '*');
+</script>
+</body>
+</html>
