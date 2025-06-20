@@ -3,6 +3,7 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
+import { AnimatePresence, motion } from 'framer-motion';
 import RouletteScene from '../../scenes/RouletteScene';
 import { IFrame } from '@/components/IFrame';
 import { useIsFocused } from '@react-navigation/core';
@@ -12,30 +13,41 @@ import {
   trackPerformance,
   trackUserAction,
 } from '../../lib/sentry';
-import * as Sentry from '@sentry/react-native';
+import {
+  AnimatedButton,
+  AnimatedText,
+  AnimatedView,
+  LoadingSpinner,
+} from '@/components/AnimatedComponents';
+import {
+  modalVariants,
+  overlayVariants,
+  pageTransition,
+  pageVariants,
+} from '../../lib/animations';
 
 const RouletteGameContent: React.FC = () => {
   const phaserRef = useRef<Phaser.Game | null>(null);
   const containerId = 'roulette-phaser-container';
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [gameLoading, setGameLoading] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
   const isFocused = useIsFocused();
 
   useEffect(() => {
     const startTime = performance.now();
 
     try {
-      // Track game initialization
       trackUserAction('game_initialization', {
         game: 'roulette',
         iframeLoaded,
         isFocused,
       });
 
-      console.log('iframeLoaded => ', iframeLoaded);
-      console.log('isFocused => ', isFocused);
-
       if (isFocused && iframeLoaded && iframeRef.current) {
+        setGameLoading(true);
+
         // Destroy existing instance if any
         if (phaserRef.current) {
           phaserRef.current.destroy(true);
@@ -50,7 +62,6 @@ const RouletteGameContent: React.FC = () => {
             iframeLoaded,
             isFocused,
           });
-          console.warn('IFrame document not ready yet.');
           return;
         }
 
@@ -63,7 +74,6 @@ const RouletteGameContent: React.FC = () => {
             step: 'container_not_found',
             containerId,
           });
-          console.warn('Could not find #phaser-container inside IFrame.');
           return;
         }
 
@@ -83,25 +93,29 @@ const RouletteGameContent: React.FC = () => {
         try {
           phaserRef.current = new Phaser.Game(config);
 
-          const initTime = performance.now() - startTime;
-          trackPerformance('phaser_game_initialization', initTime);
-          trackUserAction('phaser_game_created', {
-            initTime,
-            config: {
-              width: config.width,
-              height: config.height,
-              backgroundColor: config.backgroundColor,
-            },
-          });
+          // Add loading completion handler
+          setTimeout(() => {
+            setGameLoading(false);
+            const initTime = performance.now() - startTime;
+            trackPerformance('phaser_game_initialization', initTime);
+            trackUserAction('phaser_game_created', {
+              initTime,
+              config: {
+                width: config.width,
+                height: config.height,
+                backgroundColor: config.backgroundColor,
+              },
+            });
+          }, 2000);
         } catch (phaserError) {
           trackGameError(phaserError as Error, 'roulette', {
             step: 'phaser_game_creation',
             config,
           });
+          setGameLoading(false);
           throw phaserError;
         }
 
-        // Cleanup function
         return (): void => {
           try {
             if (phaserRef.current) {
@@ -124,7 +138,7 @@ const RouletteGameContent: React.FC = () => {
         isFocused,
         startTime,
       });
-      console.error('Error in RouletteGame useEffect:', error);
+      setGameLoading(false);
     }
   }, [isFocused, iframeLoaded]);
 
@@ -138,45 +152,225 @@ const RouletteGameContent: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen bg-gray-900 py-8 px-4">
-      <h1 className="text-6xl font-extrabold text-yellow-400 mb-8">
-        🎰 Custom Phaser Roulette
-      </h1>
+    <AnimatedView
+      variants={pageVariants}
+      initial="initial"
+      animate="in"
+      exit="out"
+      transition={pageTransition}
+      className="flex-1 bg-gradient-to-br from-green-900 via-green-800 to-green-900 min-h-screen"
+    >
+      {/* Header */}
+      <motion.div
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+        className="p-4 text-center"
+      >
+        <AnimatedText className="text-4xl font-bold text-yellow-400 mb-2">
+          🎰 Roulette Royale
+        </AnimatedText>
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: '200px' }}
+          transition={{ delay: 0.8, duration: 1 }}
+          className="h-1 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded mx-auto mb-4"
+        />
 
-      {isFocused && (
-        <IFrame
-          ref={iframeRef}
-          onLoad={handleIFrameLoad}
-          allowedOrigin={window.location.origin}
-          style={{
-            width: 1024,
-            height: 800,
+        <AnimatedButton
+          variant="secondary"
+          size="sm"
+          onPress={() => setShowInstructions(true)}
+          className="mb-4"
+        >
+          📖 How to Play
+        </AnimatedButton>
+      </motion.div>
+
+      {/* Game Container */}
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.4, type: 'spring', stiffness: 150 }}
+        className="flex-1 flex items-center justify-center px-4"
+      >
+        {isFocused && (
+          <motion.div
+            className="relative"
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            {/* Game Frame */}
+            <motion.div
+              className="border-8 border-yellow-500 rounded-2xl shadow-2xl overflow-hidden"
+              animate={{
+                boxShadow: [
+                  '0 0 30px rgba(255, 215, 0, 0.3)',
+                  '0 0 50px rgba(255, 215, 0, 0.5)',
+                  '0 0 30px rgba(255, 215, 0, 0.3)',
+                ],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Number.POSITIVE_INFINITY,
+              }}
+            >
+              <IFrame
+                ref={iframeRef}
+                onLoad={handleIFrameLoad}
+                allowedOrigin={window.location.origin}
+                style={{
+                  width: 1024,
+                  height: 800,
+                }}
+              >
+                <div id={containerId} className="w-full h-full bg-green-800" />
+              </IFrame>
+            </motion.div>
+
+            {/* Loading Overlay */}
+            <AnimatePresence>
+              {gameLoading && (
+                <motion.div
+                  variants={overlayVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center rounded-2xl"
+                >
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="text-center"
+                  >
+                    <LoadingSpinner
+                      size={60}
+                      color="#ffd700"
+                      className="mb-4"
+                    />
+                    <AnimatedText className="text-yellow-400 text-xl font-bold mb-2">
+                      Loading Roulette Table...
+                    </AnimatedText>
+                    <motion.div
+                      className="w-48 h-2 bg-gray-700 rounded-full overflow-hidden"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600"
+                        initial={{ width: 0 }}
+                        animate={{ width: '100%' }}
+                        transition={{ duration: 2, ease: 'easeInOut' }}
+                      />
+                    </motion.div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </motion.div>
+
+      {/* Instructions Modal */}
+      <AnimatePresence>
+        {showInstructions && (
+          <>
+            <motion.div
+              variants={overlayVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="absolute inset-0 bg-black bg-opacity-70 z-40"
+              onClick={() => setShowInstructions(false)}
+            />
+            <motion.div
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="absolute inset-4 bg-gradient-to-br from-casino-secondary to-casino-accent rounded-xl border-2 border-casino-gold z-50 p-6 overflow-y-auto"
+            >
+              <AnimatedText className="text-2xl font-bold text-casino-gold mb-4 text-center">
+                🎯 How to Play Roulette
+              </AnimatedText>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-4 text-white"
+              >
+                <div>
+                  <AnimatedText className="font-bold text-yellow-400 mb-2">
+                    🎮 Basic Controls:
+                  </AnimatedText>
+                  <AnimatedText className="text-sm">
+                    • Click "Buy chips" to purchase betting chips
+                    {'\n'}• Select chip denomination at the bottom
+                    {'\n'}• Click on betting areas to place chips
+                    {'\n'}• Click SPIN to start the round
+                  </AnimatedText>
+                </div>
+
+                <div>
+                  <AnimatedText className="font-bold text-yellow-400 mb-2">
+                    💰 Betting Options:
+                  </AnimatedText>
+                  <AnimatedText className="text-sm">
+                    • Single Numbers (35:1 payout)
+                    {'\n'}• Red/Black, Even/Odd (1:1 payout)
+                    {'\n'}• Dozens, Columns (2:1 payout)
+                    {'\n'}• High/Low (1:1 payout)
+                  </AnimatedText>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="mt-6"
+              >
+                <AnimatedButton
+                  variant="primary"
+                  onPress={() => setShowInstructions(false)}
+                  className="w-full"
+                >
+                  Got it! Let's Play 🎰
+                </AnimatedButton>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Footer Info */}
+      <motion.div
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.6 }}
+        className="p-4 text-center"
+      >
+        <AnimatedText className="text-gray-300 text-sm">
+          🎲 Responsive roulette table with smooth animations
+        </AnimatedText>
+        <motion.div
+          animate={{
+            opacity: [0.5, 1, 0.5],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Number.POSITIVE_INFINITY,
           }}
         >
-          <div
-            id={containerId}
-            className="w-full max-w-screen-lg aspect-w-4 aspect-h-3
-                   border-8 border-yellow-500 rounded-2xl
-                   shadow-[0_0_30px_rgba(0,0,0,0.8)]
-                   overflow-y-scroll"
-          />
-        </IFrame>
-      )}
-
-      <p className="mt-6 text-gray-300 text-center max-w-2xl">
-        Responsive board: resize your window and the table, chips, and button
-        will scale to fit!
-        <br />
-        Container now stretches up to 1024×768 (4:3) or your screen's width,
-        whichever is smaller.
-      </p>
-    </div>
+          <AnimatedText className="text-yellow-400 text-xs mt-1">
+            ✨ Resize your window to see the adaptive layout
+          </AnimatedText>
+        </motion.div>
+      </motion.div>
+    </AnimatedView>
   );
 };
 
-// Wrap with Sentry error boundary and profiler
-const RouletteGame = Sentry.withProfiler(Sentry.wrap(RouletteGameContent), {
-  name: 'RouletteGame',
-});
-
-export default RouletteGame;
+export default RouletteGameContent;

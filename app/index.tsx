@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Pressable, Text, View } from 'react-native';
 import { Link } from 'expo-router';
+import { motion } from 'framer-motion';
 import { usePostHog } from '../contexts/PostHogProvider';
 import { trackEvent } from '../lib/posthog';
 import {
@@ -12,6 +12,20 @@ import {
   trackError,
   trackUserAction,
 } from '../lib/sentry';
+import {
+  AnimatedButton,
+  AnimatedText,
+  AnimatedView,
+  FloatingElement,
+  LoadingSpinner,
+  PulsingElement,
+  TypewriterText,
+} from '@/components/AnimatedComponents';
+import {
+  containerVariants,
+  pageTransition,
+  pageVariants,
+} from '../lib/animations';
 
 function HomeScreenContent() {
   const { posthog, isInitialized } = usePostHog();
@@ -61,44 +75,168 @@ function HomeScreenContent() {
     setTimeout(() => testSentryGameError(), 2000);
   };
 
-  return (
-    <View className="flex-1 bg-casino-primary justify-center items-center p-4">
-      <Text className="text-4xl font-bold text-casino-gold mb-8 text-center">
-        🎰 RTPLUX
-      </Text>
-
-      <Text className="text-lg text-gray-300 mb-8 text-center">
-        Real-Time Premium Luxury Casino Experience
-      </Text>
-
-      <Link href="/games" asChild>
-        <Pressable
-          className="bg-casino-gold text-casino-primary font-bold py-3 px-6 rounded-lg shadow-lg mb-4"
-          onPress={handleEnterGames}
-        >
-          <Text className="text-casino-primary font-bold text-lg">
-            Enter Games
-          </Text>
-        </Pressable>
-      </Link>
-
-      {/* Test Sentry Button */}
-      <Pressable
-        className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg mb-4"
-        onPress={handleTestSentry}
+  if (!isInitialized) {
+    return (
+      <AnimatedView
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex-1 bg-casino-primary justify-center items-center"
       >
-        <Text className="text-white font-bold text-sm">🧪 Test Sentry</Text>
-      </Pressable>
+        <LoadingSpinner size={60} />
+        <AnimatedText className="text-white mt-4 text-lg">
+          Loading Casino...
+        </AnimatedText>
+      </AnimatedView>
+    );
+  }
 
-      <View className="mt-8 bg-casino-secondary rounded-xl p-4 shadow-xl border border-casino-accent">
-        <Text className="text-white text-center">
-          🚧 Development Phase 0 - Foundation Setup
-        </Text>
-        <Text className="text-gray-300 text-center text-sm mt-2">
-          Click "Test Sentry" to verify error tracking is working
-        </Text>
-      </View>
-    </View>
+  return (
+    <AnimatedView
+      variants={pageVariants}
+      initial="initial"
+      animate="in"
+      exit="out"
+      transition={pageTransition}
+      className="flex-1 bg-casino-primary"
+    >
+      {/* Background decorative elements */}
+      <FloatingElement className="absolute top-20 left-10">
+        <AnimatedText className="text-6xl opacity-10">🎰</AnimatedText>
+      </FloatingElement>
+
+      <FloatingElement className="absolute top-40 right-10">
+        <AnimatedText className="text-4xl opacity-10">🎲</AnimatedText>
+      </FloatingElement>
+
+      <FloatingElement className="absolute bottom-40 left-20">
+        <AnimatedText className="text-5xl opacity-10">🃏</AnimatedText>
+      </FloatingElement>
+
+      <AnimatedView
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex-1 justify-center items-center p-4"
+      >
+        {/* Main Title with Typewriter Effect */}
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+        >
+          <PulsingElement>
+            <AnimatedText className="text-6xl font-bold text-casino-gold mb-4 text-center">
+              🎰 RTPLUX
+            </AnimatedText>
+          </PulsingElement>
+        </motion.div>
+
+        {/* Subtitle with Typewriter Effect */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <TypewriterText
+            text="Real-Time Premium Luxury Casino Experience"
+            delay={800}
+            speed={80}
+            className="text-lg text-gray-300 mb-8 text-center"
+          />
+        </motion.div>
+
+        {/* Main Action Button */}
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 1.2, type: 'spring', stiffness: 200 }}
+        >
+          <Link href="/games" asChild>
+            <AnimatedButton
+              variant="primary"
+              size="lg"
+              onPress={handleEnterGames}
+              className="mb-6"
+            >
+              🎮 Enter Games
+            </AnimatedButton>
+          </Link>
+        </motion.div>
+
+        {/* Test Button */}
+        <motion.div
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 1.4 }}
+        >
+          <AnimatedButton
+            variant="danger"
+            size="sm"
+            onPress={handleTestSentry}
+            className="mb-8"
+          >
+            🧪 Test Sentry
+          </AnimatedButton>
+        </motion.div>
+
+        {/* Status Card */}
+        <motion.div
+          initial={{ y: 40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 1.6, type: 'spring', stiffness: 150 }}
+          className="bg-casino-secondary rounded-xl p-6 shadow-xl border border-casino-accent max-w-sm"
+        >
+          <AnimatedText className="text-white text-center font-semibold mb-2">
+            🚧 Development Phase 0
+          </AnimatedText>
+          <AnimatedText className="text-white text-center mb-3">
+            Foundation Setup
+          </AnimatedText>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: '75%' }}
+            transition={{ delay: 2, duration: 1.5 }}
+            className="bg-casino-gold h-2 rounded-full mb-3"
+          />
+          <AnimatedText className="text-gray-300 text-center text-sm">
+            Click "Test Sentry" to verify error tracking
+          </AnimatedText>
+        </motion.div>
+
+        {/* Floating Casino Icons */}
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2.5 }}
+        >
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute"
+              style={{
+                left: `${Math.random() * 80 + 10}%`,
+                top: `${Math.random() * 80 + 10}%`,
+              }}
+              animate={{
+                y: [-10, 10, -10],
+                rotate: [-5, 5, -5],
+                opacity: [0.1, 0.3, 0.1],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Number.POSITIVE_INFINITY,
+                delay: Math.random() * 2,
+              }}
+            >
+              <AnimatedText className="text-2xl">
+                {['🎯', '💎', '🎪', '⭐', '🎊', '🔥'][i]}
+              </AnimatedText>
+            </motion.div>
+          ))}
+        </motion.div>
+      </AnimatedView>
+    </AnimatedView>
   );
 }
 
