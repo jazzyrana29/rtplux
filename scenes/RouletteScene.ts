@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { credit, debit, getBalance } from '../services/wallet';
+import { credit, debit } from '../services/wallet';
 import { initRNG } from '../services/rng';
+import { useGameStore } from '../stores/gameStore';
 
 type BetType =
   | 'straight'
@@ -34,8 +35,7 @@ export default class RouletteScene extends Phaser.Scene {
   private dropSound!: Phaser.Sound.BaseSound;
   private payoutSound!: Phaser.Sound.BaseSound;
 
-  // Betting state
-  private chipCounts: Record<number, number> = { 1: 0, 5: 0, 25: 0, 100: 0 };
+  // Betting state - now managed by Zustand
   private selectedDenom = 1;
   private chipImages: Record<number, Phaser.GameObjects.Image> = {};
   private bets: Bet[] = [];
@@ -64,9 +64,6 @@ export default class RouletteScene extends Phaser.Scene {
   private purchaseTotalText!: Phaser.GameObjects.Text;
   private confirmBtn!: Phaser.GameObjects.Text;
   private cancelBtn!: Phaser.GameObjects.Text;
-
-  // Current dollar balance
-  private currentBalance = 0;
 
   // Roulette number colors
   private readonly RED_NUMBERS = [
@@ -134,11 +131,10 @@ export default class RouletteScene extends Phaser.Scene {
     // Draw table and calculate metrics
     this.drawTable();
 
-    // Fetch and display balance - position at top left
-    const bal = await getBalance();
-    this.currentBalance = bal.balance;
+    // Get balance from store and display
+    const { balance } = useGameStore.getState();
     this.balanceText = this.add
-      .text(20, 20, `Balance: $${this.currentBalance}`, {
+      .text(20, 20, `Balance: $${balance}`, {
         fontSize: '24px',
         color: '#ffffff',
         fontStyle: 'bold',
@@ -180,6 +176,27 @@ export default class RouletteScene extends Phaser.Scene {
         repeat: 0,
       });
     }
+
+    // Subscribe to store changes for real-time updates
+    this.subscribeToStoreChanges();
+  }
+
+  private subscribeToStoreChanges() {
+    // Subscribe to store changes
+    useGameStore.subscribe((state, prevState) => {
+      // Check if balance changed
+      if (state.balance !== prevState.balance) {
+        this.balanceText.setText(`Balance: $${state.balance}`);
+      }
+
+      // Check if chip counts changed
+      if (
+        JSON.stringify(state.chipCounts) !==
+        JSON.stringify(prevState.chipCounts)
+      ) {
+        this.updateChipPalette();
+      }
+    });
   }
 
   private drawTable() {
@@ -489,12 +506,15 @@ export default class RouletteScene extends Phaser.Scene {
     numbers: number[],
     payout: number
   ) {
-    if (this.chipCounts[this.selectedDenom] <= 0) {
+    const { chipCounts, removeChips } = useGameStore.getState();
+
+    if (chipCounts[this.selectedDenom] <= 0) {
       this.outcomeText.setText(`No $${this.selectedDenom} chips left!`);
       return;
     }
-    this.chipCounts[this.selectedDenom]--;
-    this.updateChipPalette();
+
+    // Remove chip from store
+    removeChips(this.selectedDenom, 1);
 
     // Determine chip placement position
     let cx: number, cy: number;
@@ -603,8 +623,8 @@ export default class RouletteScene extends Phaser.Scene {
     const chipAreaWidth = Math.min(this.scale.width * 0.8, 600);
     const chipAreaX = (this.scale.width - chipAreaWidth) / 2;
     const segW = chipAreaWidth / 5;
-    const y = this.scale.height - 100; // Moved up slightly to accommodate larger chips
-    const iconSize = Math.min(segW * 0.8, 70); // Increased from 0.6 to 0.8, max 70px
+    const y = this.scale.height - 100;
+    const iconSize = Math.min(segW * 0.8, 70);
 
     denoms.forEach((d, i) => {
       const x = chipAreaX + segW * (i + 0.5);
@@ -613,9 +633,12 @@ export default class RouletteScene extends Phaser.Scene {
         .setDisplaySize(iconSize, iconSize)
         .setInteractive({ cursor: 'pointer' })
         .on('pointerup', () => this.selectDenom(d));
+
+      // Get initial chip count from store
+      const { chipCounts } = useGameStore.getState();
       this.add
-        .text(x, y + iconSize * 0.7, `x${this.chipCounts[d]}`, {
-          fontSize: '18px', // Increased from 16px
+        .text(x, y + iconSize * 0.7, `x${chipCounts[d]}`, {
+          fontSize: '18px',
           color: '#fff',
         })
         .setOrigin(0.5);
@@ -633,8 +656,9 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   private updateChipPalette() {
+    const { chipCounts } = useGameStore.getState();
     Object.entries(this.chipImages).forEach(([den, img]) => {
-      const count = this.chipCounts[+den];
+      const count = chipCounts[+den];
       this.children.list.forEach((c) => {
         if (
           c instanceof Phaser.GameObjects.Text &&
@@ -721,18 +745,16 @@ export default class RouletteScene extends Phaser.Scene {
     }
 
     const betCount = this.bets.length;
+    const { addChips } = useGameStore.getState();
 
-    // Return chips to player
+    // Return chips to player via store
     this.bets.forEach((bet) => {
-      this.chipCounts[bet.denom]++;
+      addChips(bet.denom, 1);
       bet.sprite.destroy();
     });
 
     // Clear all bets
     this.bets = [];
-
-    // Update chip display
-    this.updateChipPalette();
 
     this.outcomeText.setText(`Reset ${betCount} bets - chips returned`);
   }
@@ -1230,11 +1252,12 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   private addPurchase(d: number) {
+    const { balance } = useGameStore.getState();
     const total = Object.entries(this.purchaseCounts).reduce(
       (s, [den, c]) => s + Number(den) * c,
       0
     );
-    if (total + d <= this.currentBalance) {
+    if (total + d <= balance) {
       this.purchaseCounts[d]++;
       this.updatePurchaseUI();
     }
@@ -1275,12 +1298,11 @@ export default class RouletteScene extends Phaser.Scene {
     if (total > 0) {
       const dr = await debit(total);
       if (dr.success) {
-        this.currentBalance = dr.balance;
-        this.balanceText.setText(`Balance: $${dr.balance}`);
-        Object.entries(this.purchaseCounts).forEach(
-          ([den, c]) => (this.chipCounts[+den] += c)
-        );
-        this.updateChipPalette();
+        const { addChips } = useGameStore.getState();
+        // Add chips to store
+        Object.entries(this.purchaseCounts).forEach(([den, c]) => {
+          addChips(Number(den), c);
+        });
         this.hidePurchaseUI();
       } else {
         this.outcomeText.setText(dr.message || 'Purchase failed');
@@ -1289,17 +1311,13 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   private async withdrawChips() {
-    const total = Object.entries(this.chipCounts).reduce(
-      (s, [den, c]) => s + Number(den) * c,
-      0
-    );
+    const { getTotalChipValue, resetChips } = useGameStore.getState();
+    const total = getTotalChipValue();
+
     if (total > 0) {
       const cr = await credit(total);
       if (cr.success) {
-        this.currentBalance = cr.balance;
-        this.balanceText.setText(`Balance: $${cr.balance}`);
-        this.chipCounts = { 1: 0, 5: 0, 25: 0, 100: 0 };
-        this.updateChipPalette();
+        resetChips();
         this.outcomeText.setText(`Withdrew ${total} chips`);
       } else {
         this.outcomeText.setText('Withdrawal failed');
@@ -1385,19 +1403,19 @@ export default class RouletteScene extends Phaser.Scene {
   private async resolveBets(win: number) {
     let totalWon = 0;
     let winningBets = 0;
+    const { addChips } = useGameStore.getState();
 
     this.bets.forEach((b) => {
       b.sprite.destroy();
       if (b.numbers.includes(win)) {
         const winAmount = b.denom * (b.payout + 1); // +1 to return original bet
         totalWon += winAmount;
-        this.chipCounts[b.denom] += b.payout + 1; // Add payout + original bet
+        addChips(b.denom, b.payout + 1); // Add payout + original bet to store
         winningBets++;
       }
     });
 
     this.bets = [];
-    this.updateChipPalette();
 
     if (totalWon > 0) {
       this.payoutSound.play();

@@ -1,29 +1,36 @@
-// Mock wallet service
+import { useGameStore } from '../stores/gameStore';
+
+// Mock wallet service with Zustand integration
 export interface WalletResponse {
   success: boolean;
   balance: number;
   message?: string;
 }
 
-let currentBalance = 1000;
-
 export async function getBalance(): Promise<{ balance: number }> {
-  return { balance: currentBalance };
+  const balance = useGameStore.getState().balance;
+  return { balance };
 }
 
 export async function debit(amount: number): Promise<WalletResponse> {
-  if (currentBalance >= amount) {
-    currentBalance -= amount;
-    return { success: true, balance: currentBalance };
+  const { balance, setBalance } = useGameStore.getState();
+
+  if (balance >= amount) {
+    const newBalance = balance - amount;
+    setBalance(newBalance);
+    return { success: true, balance: newBalance };
   }
+
   return {
     success: false,
-    balance: currentBalance,
+    balance,
     message: 'Insufficient funds',
   };
 }
 
 export async function credit(amount: number): Promise<WalletResponse> {
-  currentBalance += amount;
-  return { success: true, balance: currentBalance };
+  const { balance, setBalance } = useGameStore.getState();
+  const newBalance = balance + amount;
+  setBalance(newBalance);
+  return { success: true, balance: newBalance };
 }
