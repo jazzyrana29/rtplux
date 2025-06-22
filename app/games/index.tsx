@@ -1,153 +1,164 @@
 'use client';
+
 import Link from 'next/link';
 import { ScrollView, View } from 'react-native';
 import { motion } from 'framer-motion';
+import { useLanguageStore } from '../../stores/languageStore';
+import { t } from '../../lib/i18n';
 import {
   AnimatedCard,
   AnimatedText,
   AnimatedView,
   FloatingElement,
-} from '@/components/AnimatedComponents';
+} from '../../components/AnimatedComponents';
 import {
   containerVariants,
   pageTransition,
   pageVariants,
 } from '../../lib/animations';
 
-const gamesList = [
-  {
-    id: 'roulette',
-    title: '🎯 Roulette',
-    subtitle: 'Play Now',
-    description: 'Classic European Roulette with smooth animations',
-    available: true,
-    href: '/games/roulette',
-    color: 'from-red-600 to-red-800',
-  },
-  {
-    id: 'slots',
-    title: '🎰 Slot Machine',
-    subtitle: 'Coming Soon - Phase 2',
-    description: 'Multi-line slots with bonus rounds',
-    available: false,
-    color: 'from-purple-600 to-purple-800',
-  },
-  {
-    id: 'blackjack',
-    title: '🃏 Blackjack',
-    subtitle: 'Coming Soon - Phase 5',
-    description: 'Classic 21 with side bets',
-    available: false,
-    color: 'from-green-600 to-green-800',
-  },
-  {
-    id: 'crash',
-    title: '📈 Crash',
-    subtitle: 'Coming Soon - Phase 5',
-    description: 'High-stakes multiplier game',
-    available: false,
-    color: 'from-orange-600 to-orange-800',
-  },
-];
-
-const GameCard = ({
-  game,
-  index,
-}: {
-  game: (typeof gamesList)[0];
-  index: number;
-}) => {
-  const cardContent = (
-    <AnimatedCard
-      delay={index * 0.1}
-      className={`mb-4 bg-gradient-to-br ${game.color} relative overflow-hidden`}
-    >
-      {/* Background Pattern */}
-      <motion.div
-        className="absolute inset-0 opacity-10"
-        animate={{
-          backgroundPosition: ['0% 0%', '100% 100%'],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Number.POSITIVE_INFINITY,
-          repeatType: 'reverse',
-        }}
-        style={{
-          backgroundImage:
-            'url(\'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>\')',
-        }}
-      />
-
-      <AnimatedView className="relative z-10">
-        <motion.div
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.2 + index * 0.1 }}
-        >
-          <AnimatedText className="text-white font-bold text-xl mb-2">
-            {game.title}
-          </AnimatedText>
-        </motion.div>
-
-        <motion.div
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.3 + index * 0.1 }}
-        >
-          <AnimatedText
-            className={`text-sm mb-2 ${game.available ? 'text-green-300' : 'text-yellow-300'}`}
-          >
-            {game.subtitle}
-          </AnimatedText>
-        </motion.div>
-
-        <motion.div
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.4 + index * 0.1 }}
-        >
-          <AnimatedText className="text-gray-200 text-sm">
-            {game.description}
-          </AnimatedText>
-        </motion.div>
-
-        {/* Availability Indicator */}
-        <motion.div
-          className="absolute top-4 right-4"
-          animate={
-            game.available
-              ? {
-                  scale: [1, 1.2, 1],
-                  opacity: [0.7, 1, 0.7],
-                }
-              : {}
-          }
-          transition={{
-            duration: 2,
-            repeat: Number.POSITIVE_INFINITY,
-          }}
-        >
-          <View
-            className={`w-3 h-3 rounded-full ${game.available ? 'bg-green-400' : 'bg-yellow-400'}`}
-          />
-        </motion.div>
-      </AnimatedView>
-    </AnimatedCard>
-  );
-
-  if (game.available && game.href) {
-    return (
-      <Link href={game.href} key={game.id}>
-        {cardContent}
-      </Link>
-    );
-  }
-
-  return <div key={game.id}>{cardContent}</div>;
-};
-
 export default function GamesScreen() {
+  const { isRTL } = useLanguageStore();
+
+  const gamesList = [
+    {
+      id: 'roulette',
+      title: t('games.roulette.title'),
+      subtitle: t('games.playNow'),
+      description: t('games.roulette.description'),
+      available: true,
+      href: '/games/roulette',
+      color: 'from-red-600 to-red-800',
+    },
+    {
+      id: 'slots',
+      title: t('games.slots.title'),
+      subtitle: t('games.phase2'),
+      description: t('games.slots.description'),
+      available: false,
+      color: 'from-purple-600 to-purple-800',
+    },
+    {
+      id: 'blackjack',
+      title: t('games.blackjack.title'),
+      subtitle: t('games.phase5'),
+      description: t('games.blackjack.description'),
+      available: false,
+      color: 'from-green-600 to-green-800',
+    },
+    {
+      id: 'crash',
+      title: t('games.crash.title'),
+      subtitle: t('games.phase5'),
+      description: t('games.crash.description'),
+      available: false,
+      color: 'from-orange-600 to-orange-800',
+    },
+  ];
+
+  const GameCard = ({
+    game,
+    index,
+  }: {
+    game: (typeof gamesList)[0];
+    index: number;
+  }) => {
+    const cardContent = (
+      <AnimatedCard
+        delay={index * 0.1}
+        className={`mb-4 bg-gradient-to-br ${game.color} relative overflow-hidden`}
+      >
+        {/* Background Pattern */}
+        <motion.div
+          className="absolute inset-0 opacity-10"
+          animate={{
+            backgroundPosition: ['0% 0%', '100% 100%'],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Number.POSITIVE_INFINITY,
+            repeatType: 'reverse',
+          }}
+          style={{
+            backgroundImage:
+              'url(\'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>\')',
+          }}
+        />
+
+        <AnimatedView className="relative z-10">
+          <motion.div
+            initial={{ x: isRTL ? 20 : -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.2 + index * 0.1 }}
+          >
+            <AnimatedText
+              className={`text-white font-bold text-xl mb-2 ${isRTL ? 'text-right' : 'text-left'}`}
+            >
+              {game.title}
+            </AnimatedText>
+          </motion.div>
+
+          <motion.div
+            initial={{ x: isRTL ? 20 : -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.3 + index * 0.1 }}
+          >
+            <AnimatedText
+              className={`text-sm mb-2 ${isRTL ? 'text-right' : 'text-left'} ${
+                game.available ? 'text-green-300' : 'text-yellow-300'
+              }`}
+            >
+              {game.subtitle}
+            </AnimatedText>
+          </motion.div>
+
+          <motion.div
+            initial={{ x: isRTL ? 20 : -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.4 + index * 0.1 }}
+          >
+            <AnimatedText
+              className={`text-gray-200 text-sm ${isRTL ? 'text-right' : 'text-left'}`}
+            >
+              {game.description}
+            </AnimatedText>
+          </motion.div>
+
+          {/* Availability Indicator */}
+          <motion.div
+            className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'}`}
+            animate={
+              game.available
+                ? {
+                    scale: [1, 1.2, 1],
+                    opacity: [0.7, 1, 0.7],
+                  }
+                : {}
+            }
+            transition={{
+              duration: 2,
+              repeat: Number.POSITIVE_INFINITY,
+            }}
+          >
+            <View
+              className={`w-3 h-3 rounded-full ${game.available ? 'bg-green-400' : 'bg-yellow-400'}`}
+            />
+          </motion.div>
+        </AnimatedView>
+      </AnimatedCard>
+    );
+
+    if (game.available && game.href) {
+      return (
+        <Link href={game.href} key={game.id}>
+          {cardContent}
+        </Link>
+      );
+    }
+
+    return <div key={game.id}>{cardContent}</div>;
+  };
+
   return (
     <AnimatedView
       variants={pageVariants}
@@ -156,14 +167,19 @@ export default function GamesScreen() {
       exit="out"
       transition={pageTransition}
       className="flex-1 bg-casino-primary"
+      style={{ direction: isRTL ? 'rtl' : 'ltr' }}
     >
       <ScrollView className="flex-1">
         {/* Background Elements */}
-        <FloatingElement className="absolute top-10 right-10 z-0">
+        <FloatingElement
+          className={`absolute top-10 ${isRTL ? 'left-10' : 'right-10'} z-0`}
+        >
           <AnimatedText className="text-8xl opacity-5">🎮</AnimatedText>
         </FloatingElement>
 
-        <FloatingElement className="absolute top-60 left-5 z-0">
+        <FloatingElement
+          className={`absolute top-60 ${isRTL ? 'right-5' : 'left-5'} z-0`}
+        >
           <AnimatedText className="text-6xl opacity-5">🎲</AnimatedText>
         </FloatingElement>
 
@@ -179,14 +195,16 @@ export default function GamesScreen() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
           >
-            <AnimatedText className="text-4xl font-bold text-casino-gold mb-2">
-              🎮 Game Library
+            <AnimatedText
+              className={`text-4xl font-bold text-casino-gold mb-2 ${isRTL ? 'text-right' : 'text-left'}`}
+            >
+              {t('games.library')}
             </AnimatedText>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: '100%' }}
               transition={{ delay: 0.5, duration: 1 }}
-              className="h-1 bg-gradient-to-r from-casino-gold to-transparent rounded mb-6"
+              className={`h-1 bg-gradient-to-${isRTL ? 'l' : 'r'} from-casino-gold to-transparent rounded mb-6`}
             />
           </motion.div>
 
@@ -218,7 +236,7 @@ export default function GamesScreen() {
               }}
             >
               <AnimatedText className="text-casino-gold font-bold text-xl text-center mb-2">
-                🚀 More Games Coming Soon!
+                {t('games.moreGamesComingSoon')}
               </AnimatedText>
             </motion.div>
 
@@ -234,7 +252,7 @@ export default function GamesScreen() {
             />
 
             <AnimatedText className="text-gray-300 text-sm text-center mt-2">
-              Development Progress: 60%
+              {t('games.developmentProgress')}: 60%
             </AnimatedText>
           </motion.div>
         </AnimatedView>

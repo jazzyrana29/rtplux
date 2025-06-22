@@ -12,6 +12,8 @@ import {
   trackError,
   trackUserAction,
 } from '../lib/sentry';
+import { useLanguageStore } from '../stores/languageStore';
+import { t } from '../lib/i18n';
 import {
   AnimatedButton,
   AnimatedText,
@@ -20,7 +22,11 @@ import {
   LoadingSpinner,
   PulsingElement,
   TypewriterText,
-} from '@/components/AnimatedComponents';
+} from '../components/AnimatedComponents';
+import {
+  LanguageSelector,
+  LanguageToggle,
+} from '../components/LanguageSelector';
 import {
   containerVariants,
   pageTransition,
@@ -29,14 +35,13 @@ import {
 
 function HomeScreenContent() {
   const { posthog, isInitialized } = usePostHog();
+  const { isRTL } = useLanguageStore();
 
   useEffect(() => {
     try {
-      // Track screen view in Sentry
       trackUserAction('screen_view', { screen_name: 'home' });
 
       if (isInitialized && posthog) {
-        // Track screen view in PostHog
         posthog.capture('screen_view', {
           screen_name: 'home',
           timestamp: new Date().toISOString(),
@@ -67,10 +72,7 @@ function HomeScreenContent() {
 
   const handleTestSentry = () => {
     console.log('🧪 Running Sentry tests...');
-
-    // Test different types of Sentry events
     captureMessage('User clicked test Sentry button', 'info');
-
     setTimeout(() => testSentryError(), 1000);
     setTimeout(() => testSentryGameError(), 2000);
   };
@@ -84,7 +86,7 @@ function HomeScreenContent() {
       >
         <LoadingSpinner size={60} />
         <AnimatedText className="text-white mt-4 text-lg">
-          Loading Casino...
+          {t('common.loading')}
         </AnimatedText>
       </AnimatedView>
     );
@@ -98,17 +100,27 @@ function HomeScreenContent() {
       exit="out"
       transition={pageTransition}
       className="flex-1 bg-casino-primary"
+      style={{ direction: isRTL ? 'rtl' : 'ltr' }}
     >
+      {/* Language Toggle for Development */}
+      <LanguageToggle />
+
       {/* Background decorative elements */}
-      <FloatingElement className="absolute top-20 left-10">
+      <FloatingElement
+        className={`absolute top-20 ${isRTL ? 'right-10' : 'left-10'}`}
+      >
         <AnimatedText className="text-6xl opacity-10">🎰</AnimatedText>
       </FloatingElement>
 
-      <FloatingElement className="absolute top-40 right-10">
+      <FloatingElement
+        className={`absolute top-40 ${isRTL ? 'left-10' : 'right-10'}`}
+      >
         <AnimatedText className="text-4xl opacity-10">🎲</AnimatedText>
       </FloatingElement>
 
-      <FloatingElement className="absolute bottom-40 left-20">
+      <FloatingElement
+        className={`absolute bottom-40 ${isRTL ? 'right-20' : 'left-20'}`}
+      >
         <AnimatedText className="text-5xl opacity-10">🃏</AnimatedText>
       </FloatingElement>
 
@@ -118,7 +130,7 @@ function HomeScreenContent() {
         animate="visible"
         className="flex-1 justify-center items-center p-4"
       >
-        {/* Main Title with Typewriter Effect */}
+        {/* Main Title */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -126,7 +138,7 @@ function HomeScreenContent() {
         >
           <PulsingElement>
             <AnimatedText className="text-6xl font-bold text-casino-gold mb-4 text-center">
-              🎰 RTPLUX
+              🎰 {t('home.title')}
             </AnimatedText>
           </PulsingElement>
         </motion.div>
@@ -138,11 +150,21 @@ function HomeScreenContent() {
           transition={{ delay: 0.5 }}
         >
           <TypewriterText
-            text="Real-Time Premium Luxury Casino Experience"
+            text={t('home.subtitle')}
             delay={800}
             speed={80}
             className="text-lg text-gray-300 mb-8 text-center"
           />
+        </motion.div>
+
+        {/* Language Selector */}
+        <motion.div
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 1.0, type: 'spring', stiffness: 200 }}
+          className="mb-6"
+        >
+          <LanguageSelector variant="button" />
         </motion.div>
 
         {/* Main Action Button */}
@@ -158,7 +180,7 @@ function HomeScreenContent() {
               onPress={handleEnterGames}
               className="mb-6"
             >
-              🎮 Enter Games
+              {t('home.enterGames')}
             </AnimatedButton>
           </Link>
         </motion.div>
@@ -175,7 +197,7 @@ function HomeScreenContent() {
             onPress={handleTestSentry}
             className="mb-8"
           >
-            🧪 Test Sentry
+            {t('home.testSentry')}
           </AnimatedButton>
         </motion.div>
 
@@ -187,10 +209,10 @@ function HomeScreenContent() {
           className="bg-casino-secondary rounded-xl p-6 shadow-xl border border-casino-accent max-w-sm"
         >
           <AnimatedText className="text-white text-center font-semibold mb-2">
-            🚧 Development Phase 0
+            {t('home.developmentPhase')}
           </AnimatedText>
           <AnimatedText className="text-white text-center mb-3">
-            Foundation Setup
+            {t('home.foundationSetup')}
           </AnimatedText>
           <motion.div
             initial={{ width: 0 }}
@@ -199,7 +221,7 @@ function HomeScreenContent() {
             className="bg-casino-gold h-2 rounded-full mb-3"
           />
           <AnimatedText className="text-gray-300 text-center text-sm">
-            Click "Test Sentry" to verify error tracking
+            {t('home.testSentryDescription')}
           </AnimatedText>
         </motion.div>
 

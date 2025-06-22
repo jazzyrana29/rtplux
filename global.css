@@ -3,74 +3,185 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
-  --radius: 0.5rem;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.5% 48%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.5% 48%;
 }
 
 /* Casino-specific base styles */
 html {
-  font-family: "Inter", system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
 }
 
 body {
-  background-color: #1a1a2e;
-  color: white;
+    background-color: #1a1a2e;
+    color: white;
+}
+
+/* RTL Support */
+.rtl {
+    direction: rtl;
+}
+
+.rtl .text-left {
+    text-align: right;
+}
+
+.rtl .text-right {
+    text-align: left;
+}
+
+.rtl .ml-auto {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.rtl .mr-auto {
+    margin-right: 0;
+    margin-left: auto;
+}
+
+.rtl .pl-4 {
+    padding-left: 0;
+    padding-right: 1rem;
+}
+
+.rtl .pr-4 {
+    padding-right: 0;
+    padding-left: 1rem;
+}
+
+/* RTL Flexbox adjustments */
+.rtl .flex-row {
+    flex-direction: row-reverse;
+}
+
+.rtl .justify-start {
+    justify-content: flex-end;
+}
+
+.rtl .justify-end {
+    justify-content: flex-start;
+}
+
+/* RTL positioning */
+.rtl .left-0 {
+    left: auto;
+    right: 0;
+}
+
+.rtl .right-0 {
+    right: auto;
+    left: 0;
+}
+
+.rtl .left-4 {
+    left: auto;
+    right: 1rem;
+}
+
+.rtl .right-4 {
+    right: auto;
+    left: 1rem;
 }
 
 /* Casino component styles */
 .casino-button {
-  background-color: #ffd700;
-  color: #1a1a2e;
-  font-weight: bold;
-  padding: 12px 24px;
-  border-radius: 8px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    background-color: #ffd700;
+    color: #1a1a2e;
+    font-weight: bold;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .casino-card {
-  background-color: #16213e;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  border: 1px solid #0f3460;
+    background-color: #16213e;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid #0f3460;
+}
+
+/* Language-specific fonts */
+html[lang="ar"] {
+    font-family: "Noto Sans Arabic", "Arial", sans-serif;
+}
+
+html[lang="es"] {
+    font-family: "Inter", "Arial", sans-serif;
+}
+
+html[lang="en"] {
+    font-family: "Inter", "Arial", sans-serif;
+}
+
+/* RTL animations */
+.rtl .animate-slide-in-left {
+    animation: slide-in-right 0.3s ease-out;
+}
+
+.rtl .animate-slide-in-right {
+    animation: slide-in-left 0.3s ease-out;
+}
+
+@keyframes slide-in-right {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slide-in-left {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
