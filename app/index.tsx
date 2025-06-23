@@ -26,21 +26,26 @@ import {
   pageTransition,
   pageVariants,
 } from '../lib/animations';
-import { getTextDirection, useTranslation } from '../lib/i18n';
+import { useTranslation } from '../hooks/useTranslation';
+import { getTextDirection } from '../lib/i18n';
 import { HOME_CONSTANTS } from '../constants/home';
 import { LanguageSelector } from '@/components/LanguageSelector';
 
 function HomeScreenContent() {
+  // ALL HOOKS MUST BE CALLED FIRST - BEFORE ANY CONDITIONAL LOGIC
   const { posthog, isInitialized } = usePostHog();
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
-  const { t, currentLanguage, isRTL } = useTranslation();
+  const { t, currentLanguage, isRTL, isReady } = useTranslation();
 
+  // Effects must also be called unconditionally
   useEffect(() => {
+    if (!isReady || !isInitialized) return;
+
     try {
       // Track screen view in Sentry
       trackUserAction('screen_view', { screen_name: 'home' });
 
-      if (isInitialized && posthog) {
+      if (posthog) {
         // Track screen view in PostHog
         posthog.capture('screen_view', {
           screen_name: 'home',
@@ -50,8 +55,9 @@ function HomeScreenContent() {
     } catch (error) {
       trackError(error as Error, { screen: 'home', action: 'screen_view' });
     }
-  }, [isInitialized, posthog]);
+  }, [isInitialized, posthog, isReady]);
 
+  // Event handlers
   const handleEnterGames = () => {
     try {
       trackUserAction('navigation_click', {
@@ -80,7 +86,8 @@ function HomeScreenContent() {
     setTimeout(() => testSentryGameError(), 2000);
   };
 
-  if (!isInitialized) {
+  // CONDITIONAL RENDERING ONLY AFTER ALL HOOKS
+  if (!isReady || !isInitialized) {
     return (
       <AnimatedView
         initial={{ opacity: 0 }}
@@ -89,7 +96,9 @@ function HomeScreenContent() {
       >
         <LoadingSpinner size={60} />
         <AnimatedText className="text-white mt-4 text-lg">
-          {t(HOME_CONSTANTS.LOADING_CASINO)}
+          {isReady
+            ? t(HOME_CONSTANTS.LOADING_CASINO)
+            : 'Loading translations...'}
         </AnimatedText>
       </AnimatedView>
     );
@@ -259,6 +268,7 @@ function HomeScreenContent() {
             </motion.div>
           ))}
         </motion.div>
+
         {/* Language Selector Modal */}
         <LanguageSelector
           isVisible={showLanguageSelector}

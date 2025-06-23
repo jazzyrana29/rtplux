@@ -7,14 +7,15 @@ import { initializeSentry, testSentryIntegration } from '../lib/sentry';
 import { useEffect } from 'react';
 import '../global.css';
 import { useLanguageStore } from '../stores/languageStore';
+import '../lib/i18n'; // Initialize i18n
 
 export default function RootLayout() {
   useEffect(() => {
-    // Initialize language store
+    // Initialize i18n and language store
     try {
       useLanguageStore.getState().initializeLanguage();
     } catch (error) {
-      console.error('Failed to initialize language store:', error);
+      console.error('Failed to initialize i18n:', error);
     }
 
     // Initialize Sentry as early as possible with error handling

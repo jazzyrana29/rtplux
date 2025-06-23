@@ -7,17 +7,32 @@ import {
   AnimatedText,
   AnimatedView,
   FloatingElement,
+  LoadingSpinner,
 } from '@/components/AnimatedComponents';
 import {
   containerVariants,
   pageTransition,
   pageVariants,
 } from '../../lib/animations';
-import { getTextDirection, useTranslation } from '../../lib/i18n';
+import { useTranslation } from '../../hooks/useTranslation';
+import { getTextDirection } from '../../lib/i18n';
 import { GAMES_CONSTANTS } from '../../constants/games';
 
 const GamesScreenComponent = () => {
-  const { t, currentLanguage } = useTranslation();
+  // ALL HOOKS FIRST
+  const { t, currentLanguage, isReady } = useTranslation();
+
+  // CONDITIONAL RENDERING ONLY AFTER ALL HOOKS
+  if (!isReady) {
+    return (
+      <AnimatedView className="flex-1 bg-casino-primary justify-center items-center">
+        <LoadingSpinner size={60} />
+        <AnimatedText className="text-white mt-4 text-lg">
+          Loading translations...
+        </AnimatedText>
+      </AnimatedView>
+    );
+  }
 
   const gamesList = [
     {

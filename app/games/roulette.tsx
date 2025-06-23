@@ -25,7 +25,8 @@ import {
   pageTransition,
   pageVariants,
 } from '../../lib/animations';
-import { getTextDirection, useTranslation } from '../../lib/i18n';
+import { useTranslation } from '../../hooks/useTranslation';
+import { getTextDirection } from '../../lib/i18n';
 import { ROULETTE_CONSTANTS } from '../../constants/roulette';
 
 const RouletteGameContent: React.FC = () => {
@@ -36,7 +37,7 @@ const RouletteGameContent: React.FC = () => {
   const [gameLoading, setGameLoading] = useState(true);
   const [showInstructions, setShowInstructions] = useState(false);
   const isFocused = useIsFocused();
-  const { t, currentLanguage } = useTranslation();
+  const { t, currentLanguage, isReady } = useTranslation();
 
   useEffect(() => {
     const startTime = performance.now();
@@ -153,6 +154,18 @@ const RouletteGameContent: React.FC = () => {
       trackError(error as Error, { context: 'iframe_load_handler' });
     }
   };
+
+  // Add this loading check
+  if (!isReady) {
+    return (
+      <AnimatedView className="flex-1 bg-gradient-to-br from-green-900 via-green-800 to-green-900 min-h-screen justify-center items-center">
+        <LoadingSpinner size={60} color="#ffd700" />
+        <AnimatedText className="text-yellow-400 text-xl font-bold mt-4">
+          Loading translations...
+        </AnimatedText>
+      </AnimatedView>
+    );
+  }
 
   return (
     <AnimatedView

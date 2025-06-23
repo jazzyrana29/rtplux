@@ -2,22 +2,10 @@ import Phaser from 'phaser';
 import { credit, debit } from '../services/wallet';
 import { initRNG } from '../services/rng';
 import { useGameStore } from '../stores/gameStore';
-import {
-  trackBetPlaced,
-  trackChipPurchase,
-  trackGameEvent,
-  trackGameResult,
-  trackWithdrawal,
-} from '../lib/posthog';
-import {
-  trackAPIError,
-  trackError,
-  trackGameError,
-  trackPerformance,
-  trackUserAction,
-} from '../lib/sentry';
-import { useLanguageStore } from '../stores/languageStore';
+import { trackBetPlaced, trackChipPurchase, trackGameEvent, trackGameResult, trackWithdrawal } from '../lib/posthog';
+import { trackAPIError, trackError, trackGameError, trackPerformance, trackUserAction } from '../lib/sentry';
 import { ROULETTE_CONSTANTS } from '../constants/roulette';
+import i18n from '../lib/i18n';
 
 type BetType =
   | 'straight'
@@ -107,51 +95,51 @@ export default class RouletteScene extends Phaser.Scene {
       this.load.atlas(
         'chips',
         '/public/assets/games/roulette/chips.png',
-        '/public/assets/games/roulette/chips.json'
+        '/public/assets/games/roulette/chips.json',
       );
       // Load spin button
       this.load.image(
         'spinButton',
-        '/public/assets/games/roulette/spin_button.webp'
+        '/public/assets/games/roulette/spin_button.webp',
       );
       // Load wheel sprites
       this.load.atlas(
         'rouletteSprites',
         '/public/assets/games/roulette/rouletteSprites.webp',
-        '/public/assets/games/roulette/rouletteSprites.json'
+        '/public/assets/games/roulette/rouletteSprites.json',
       );
       // Load confetti atlas
       this.load.atlas(
         'confetti',
         '/public/assets/games/roulette/confetti-0.webp',
-        '/public/assets/games/roulette/confetti-0.json'
+        '/public/assets/games/roulette/confetti-0.json',
       );
       // Load digits atlas for result display (optimized assets)
       this.load.atlas(
         'digits',
         '/public/assets/games/roulette/digitAtlas.png',
-        '/public/assets/games/roulette/digitAtlas.json'
+        '/public/assets/games/roulette/digitAtlas.json',
       );
       // Load sounds
       this.load.audio(
         'spinSound',
-        '/public/assets/games/roulette/audio/roulette_spin.mp3'
+        '/public/assets/games/roulette/audio/roulette_spin.mp3',
       );
       this.load.audio(
         'dropSound',
-        '/public/assets/games/roulette/audio/ball_drop_click.mp3'
+        '/public/assets/games/roulette/audio/ball_drop_click.mp3',
       );
       this.load.audio(
         'payoutSound',
-        '/public/assets/games/roulette/audio/payout_jingle.mp3'
+        '/public/assets/games/roulette/audio/payout_jingle.mp3',
       );
       this.load.audio(
         'buyChipsSound',
-        '/public/assets/games/roulette/audio/buy_chips.mp3'
+        '/public/assets/games/roulette/audio/buy_chips.mp3',
       );
       this.load.audio(
         'withdrawalSound',
-        '/public/assets/games/roulette/audio/withdrawal.mp3'
+        '/public/assets/games/roulette/audio/withdrawal.mp3',
       );
 
       // Track loading completion
@@ -328,15 +316,7 @@ export default class RouletteScene extends Phaser.Scene {
   }
 
   private t(key: string): string {
-    const { translations } = useLanguageStore.getState();
-    const keys = key.split('.');
-    let value: any = translations;
-
-    for (const k of keys) {
-      value = value?.[k];
-    }
-
-    return value || key;
+    return i18n.t(key) || key;
   }
 
   private formatMessage(template: string, params: Record<string, any>): string {
@@ -398,7 +378,7 @@ export default class RouletteScene extends Phaser.Scene {
         this.tableY + this.tableH / 2 + 60,
         this.tableW + 40,
         this.tableH + 140,
-        0x003300
+        0x003300,
       )
       .setDepth(-1);
 
@@ -537,7 +517,7 @@ export default class RouletteScene extends Phaser.Scene {
         this.tableW,
         this.cellH,
         0,
-        0
+        0,
       )
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.placeBet(0, 'straight', [0], 35));
@@ -568,7 +548,7 @@ export default class RouletteScene extends Phaser.Scene {
       {
         betType: 'even' as BetType,
         numbers: Array.from({ length: 18 }, (_, i) => (i + 1) * 2).filter(
-          (n) => n <= 36
+          (n) => n <= 36,
         ),
         payout: 1,
       },
@@ -577,7 +557,7 @@ export default class RouletteScene extends Phaser.Scene {
       {
         betType: 'odd' as BetType,
         numbers: Array.from({ length: 18 }, (_, i) => i * 2 + 1).filter(
-          (n) => n <= 36
+          (n) => n <= 36,
         ),
         payout: 1,
       },
@@ -597,11 +577,11 @@ export default class RouletteScene extends Phaser.Scene {
           outsideW,
           outsideH,
           0,
-          0
+          0,
         )
         .setInteractive({ cursor: 'pointer' })
         .on('pointerup', () =>
-          this.placeBet(undefined, bet.betType, bet.numbers, bet.payout)
+          this.placeBet(undefined, bet.betType, bet.numbers, bet.payout),
         );
     });
 
@@ -635,11 +615,11 @@ export default class RouletteScene extends Phaser.Scene {
           dozenW,
           outsideH,
           0,
-          0
+          0,
         )
         .setInteractive({ cursor: 'pointer' })
         .on('pointerup', () =>
-          this.placeBet(undefined, bet.betType, bet.numbers, bet.payout)
+          this.placeBet(undefined, bet.betType, bet.numbers, bet.payout),
         );
     });
 
@@ -674,11 +654,11 @@ export default class RouletteScene extends Phaser.Scene {
           columnW,
           columnH,
           0,
-          0
+          0,
         )
         .setInteractive({ cursor: 'pointer' })
         .on('pointerup', () =>
-          this.placeBet(undefined, bet.betType, bet.numbers, bet.payout)
+          this.placeBet(undefined, bet.betType, bet.numbers, bet.payout),
         );
     });
   }
@@ -687,7 +667,7 @@ export default class RouletteScene extends Phaser.Scene {
     num: number | undefined,
     betType: BetType,
     numbers: number[],
-    payout: number
+    payout: number,
   ) {
     try {
       const { chipCounts, removeChips } = useGameStore.getState();
@@ -696,7 +676,7 @@ export default class RouletteScene extends Phaser.Scene {
         this.outcomeText.setText(
           this.formatMessage(this.t(ROULETTE_CONSTANTS.NO_CHIPS_LEFT), {
             denomination: this.selectedDenom,
-          })
+          }),
         );
         trackUserAction('bet_placement_failed', {
           reason: 'insufficient_chips',
@@ -749,7 +729,7 @@ export default class RouletteScene extends Phaser.Scene {
       const existing = this.bets.filter(
         (b) =>
           b.betType === betType &&
-          (betType === 'straight' ? b.number === num : true)
+          (betType === 'straight' ? b.number === num : true),
       ).length;
       const offsets: [number, number][] = [
         [-0.2, -0.2],
@@ -917,7 +897,7 @@ export default class RouletteScene extends Phaser.Scene {
           padding: { x: 12, y: 8 },
           fixedWidth: buttonWidth,
           align: 'center',
-        }
+        },
       )
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.showPurchaseUI())
@@ -937,7 +917,7 @@ export default class RouletteScene extends Phaser.Scene {
           padding: { x: 12, y: 8 },
           fixedWidth: buttonWidth,
           align: 'center',
-        }
+        },
       )
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.withdrawChips())
@@ -957,7 +937,7 @@ export default class RouletteScene extends Phaser.Scene {
           padding: { x: 12, y: 8 },
           fixedWidth: buttonWidth,
           align: 'center',
-        }
+        },
       )
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.resetBets())
@@ -977,7 +957,7 @@ export default class RouletteScene extends Phaser.Scene {
           padding: { x: 12, y: 8 },
           fixedWidth: buttonWidth,
           align: 'center',
-        }
+        },
       )
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.showInfoUI())
@@ -1015,7 +995,7 @@ export default class RouletteScene extends Phaser.Scene {
     this.outcomeText.setText(
       this.formatMessage(this.t(ROULETTE_CONSTANTS.RESET_BETS_SUCCESS), {
         count: betCount,
-      })
+      }),
     );
   }
 
@@ -1081,7 +1061,7 @@ export default class RouletteScene extends Phaser.Scene {
             this.tableX + this.tableW / 2,
             this.tableY + this.tableH / 2,
             'rouletteSprites',
-            'sprite.png'
+            'sprite.png',
           )
           .setDisplaySize(this.tableW * 0.45, this.tableW * 0.45)
           .setDepth(1000);
@@ -1148,7 +1128,7 @@ export default class RouletteScene extends Phaser.Scene {
           startX + i * size,
           y,
           'digits',
-          `casino_digits_pngs/digit_${d}.png`
+          `casino_digits_pngs/digit_${d}.png`,
         )
         .setDisplaySize(size, size)
         .setDepth(500)
@@ -1217,7 +1197,7 @@ export default class RouletteScene extends Phaser.Scene {
           this.formatMessage(this.t(ROULETTE_CONSTANTS.HIT_WON), {
             amount: totalWon,
             bets: winningBets,
-          })
+          }),
         );
 
         try {
@@ -1225,7 +1205,7 @@ export default class RouletteScene extends Phaser.Scene {
             .sprite(
               this.tableX + this.tableW / 2,
               this.tableY + this.tableH / 2,
-              'confetti'
+              'confetti',
             )
             .setScale(1.5);
 
@@ -1238,7 +1218,7 @@ export default class RouletteScene extends Phaser.Scene {
           this.formatMessage(this.t(ROULETTE_CONSTANTS.NO_HITS), {
             number: win,
             color: this.getNumberColor(win),
-          })
+          }),
         );
       }
     } catch (error) {
@@ -1354,7 +1334,7 @@ export default class RouletteScene extends Phaser.Scene {
     const { balance } = useGameStore.getState();
     const total = Object.entries(this.purchaseCounts).reduce(
       (s, [den, c]) => s + Number(den) * c,
-      0
+      0,
     );
     if (total + d <= balance) {
       // Play buy chips sound when adding chips to purchase
@@ -1376,7 +1356,7 @@ export default class RouletteScene extends Phaser.Scene {
               (c) =>
                 c instanceof Phaser.GameObjects.Image &&
                 (c as Phaser.GameObjects.Image).frame.name === `chip${d}.png` &&
-                Math.abs((c as Phaser.GameObjects.Image).x - xPos) < 2
+                Math.abs((c as Phaser.GameObjects.Image).x - xPos) < 2,
             ) != null
           );
         });
@@ -1387,7 +1367,7 @@ export default class RouletteScene extends Phaser.Scene {
     });
     const total = Object.entries(this.purchaseCounts).reduce(
       (s, [den, c]) => s + Number(den) * c,
-      0
+      0,
     );
     this.purchaseTotalText.setText(`Total: $${total}`);
   }
@@ -1396,7 +1376,7 @@ export default class RouletteScene extends Phaser.Scene {
     try {
       const total = Object.entries(this.purchaseCounts).reduce(
         (s, [den, c]) => s + Number(den) * c,
-        0
+        0,
       );
 
       if (total > 0) {
@@ -1469,11 +1449,11 @@ export default class RouletteScene extends Phaser.Scene {
             this.outcomeText.setText(
               this.formatMessage(this.t(ROULETTE_CONSTANTS.WITHDRAW_SUCCESS), {
                 amount: total,
-              })
+              }),
             );
           } else {
             this.outcomeText.setText(
-              this.t(ROULETTE_CONSTANTS.WITHDRAW_FAILED)
+              this.t(ROULETTE_CONSTANTS.WITHDRAW_FAILED),
             );
             trackUserAction('withdrawal_failed', {
               total,
@@ -1486,7 +1466,7 @@ export default class RouletteScene extends Phaser.Scene {
         }
       } else {
         this.outcomeText.setText(
-          this.t(ROULETTE_CONSTANTS.NO_CHIPS_TO_WITHDRAW)
+          this.t(ROULETTE_CONSTANTS.NO_CHIPS_TO_WITHDRAW),
         );
         trackUserAction('withdrawal_failed', {
           total: 0,
@@ -1663,7 +1643,7 @@ export default class RouletteScene extends Phaser.Scene {
       '',
       { title: 'HOW TO PLAY', color: '#ffff00', isHeader: true },
       {
-        text: "1. Buy chips using the 'Buy chips' button",
+        text: '1. Buy chips using the \'Buy chips\' button',
         payout: '',
         color: '#ffffff',
       },
@@ -1688,12 +1668,12 @@ export default class RouletteScene extends Phaser.Scene {
         color: '#ffffff',
       },
       {
-        text: "6. Use 'Reset Bets' to clear all bets",
+        text: '6. Use \'Reset Bets\' to clear all bets',
         payout: '',
         color: '#ffffff',
       },
       {
-        text: "7. Use 'Withdraw' to cash out chips",
+        text: '7. Use \'Withdraw\' to cash out chips',
         payout: '',
         color: '#ffffff',
       },
@@ -1761,7 +1741,7 @@ export default class RouletteScene extends Phaser.Scene {
       },
       { text: '• Set a budget and stick to it', payout: '', color: '#ffffff' },
       {
-        text: "• Use 'Reset Bets' if you change your mind",
+        text: '• Use \'Reset Bets\' if you change your mind',
         payout: '',
         color: '#ffffff',
       },
@@ -1842,7 +1822,7 @@ export default class RouletteScene extends Phaser.Scene {
           fontSize: '12px',
           color: '#888888',
           align: 'center',
-        }
+        },
       )
       .setOrigin(0, 0);
     this.infoContainer.add(scrollInstructions);
@@ -1855,7 +1835,7 @@ export default class RouletteScene extends Phaser.Scene {
           scrollY = Phaser.Math.Clamp(scrollY + deltaY * 0.5, -maxScroll, 0);
           contentContainer.setY(scrollY);
         }
-      }
+      },
     );
 
     // Keyboard scrolling

@@ -1,25 +1,38 @@
-"use client"
+'use client';
 
-import type React from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { View, Text, Pressable } from "react-native"
-import { useTranslation, LANGUAGE_NAMES, type Language, SUPPORTED_LANGUAGES, getTextDirection } from "../lib/i18n"
-import { AnimatedButton, AnimatedText, AnimatedView } from "./AnimatedComponents"
-import { modalVariants, overlayVariants } from "../lib/animations"
-import { HOME_CONSTANTS } from "../constants/home"
+import type React from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from '../hooks/useTranslation';
+import {
+  getTextDirection,
+  type Language,
+  LANGUAGE_NAMES,
+  SUPPORTED_LANGUAGES,
+} from '../lib/i18n';
+import {
+  AnimatedButton,
+  AnimatedText,
+  AnimatedView,
+} from './AnimatedComponents';
+import { modalVariants, overlayVariants } from '../lib/animations';
+import { HOME_CONSTANTS } from '../constants/home';
 
 interface LanguageSelectorProps {
-  isVisible: boolean
-  onClose: () => void
+  isVisible: boolean;
+  onClose: () => void;
 }
 
-export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ isVisible, onClose }) => {
-  const { t, currentLanguage, changeLanguage, isRTL } = useTranslation()
+export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
+  isVisible,
+  onClose,
+}) => {
+  const { t, currentLanguage, changeLanguage, isRTL } = useTranslation();
 
   const handleLanguageSelect = (language: Language) => {
-    changeLanguage(language)
-    onClose()
-  }
+    changeLanguage(language);
+    onClose();
+  };
 
   return (
     <AnimatePresence>
@@ -64,18 +77,22 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ isVisible, o
                       p-4 rounded-lg border-2 transition-all duration-200
                       ${
                         currentLanguage === language
-                          ? "bg-casino-gold border-casino-gold"
-                          : "bg-casino-primary border-casino-accent hover:border-casino-gold"
+                          ? 'bg-casino-gold border-casino-gold'
+                          : 'bg-casino-primary border-casino-accent hover:border-casino-gold'
                       }
                     `}
                   >
-                    <View className={`flex-row items-center justify-between ${isRTL ? "flex-row-reverse" : ""}`}>
+                    <View
+                      className={`flex-row items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}
+                    >
                       <Text
                         className={`text-lg font-semibold ${
-                          currentLanguage === language ? "text-casino-primary" : "text-white"
+                          currentLanguage === language
+                            ? 'text-casino-primary'
+                            : 'text-white'
                         }`}
                         style={{
-                          textAlign: isRTL ? "right" : "left",
+                          textAlign: isRTL ? 'right' : 'left',
                         }}
                       >
                         {LANGUAGE_NAMES[language]}
@@ -95,10 +112,12 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ isVisible, o
                     {/* Language code indicator */}
                     <Text
                       className={`text-sm mt-1 ${
-                        currentLanguage === language ? "text-casino-primary opacity-70" : "text-gray-400"
+                        currentLanguage === language
+                          ? 'text-casino-primary opacity-70'
+                          : 'text-gray-400'
                       }`}
                       style={{
-                        textAlign: isRTL ? "right" : "left",
+                        textAlign: isRTL ? 'right' : 'left',
                       }}
                     >
                       {language.toUpperCase()}
@@ -114,13 +133,17 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ isVisible, o
               transition={{ delay: 0.4 }}
               className="mt-6"
             >
-              <AnimatedButton variant="danger" onPress={onClose} className="w-full">
-                {t("common.close")}
+              <AnimatedButton
+                variant="danger"
+                onPress={onClose}
+                className="w-full"
+              >
+                {t('common.close')}
               </AnimatedButton>
             </motion.div>
           </AnimatedView>
         </>
       )}
     </AnimatePresence>
-  )
-}
+  );
+};
