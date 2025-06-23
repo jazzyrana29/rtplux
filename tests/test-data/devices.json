@@ -1,0 +1,88 @@
+{
+  "devices": {
+    "desktop": {
+      "large": {
+        "name": "Large Desktop",
+        "viewport": { "width": 2560, "height": 1440 },
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      },
+      "standard": {
+        "name": "Standard Desktop",
+        "viewport": { "width": 1920, "height": 1080 },
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      },
+      "small": {
+        "name": "Small Desktop",
+        "viewport": { "width": 1366, "height": 768 },
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
+    },
+    "tablet": {
+      "ipad_pro": {
+        "name": "iPad Pro",
+        "viewport": { "width": 1024, "height": 1366 },
+        "userAgent": "Mozilla/5.0 (iPad; CPU OS 15_0 like Mac OS X) AppleWebKit/605.1.15"
+      },
+      "ipad_landscape": {
+        "name": "iPad Landscape",
+        "viewport": { "width": 1366, "height": 1024 },
+        "userAgent": "Mozilla/5.0 (iPad; CPU OS 15_0 like Mac OS X) AppleWebKit/605.1.15"
+      },
+      "android_tablet": {
+        "name": "Android Tablet",
+        "viewport": { "width": 800, "height": 1280 },
+        "userAgent": "Mozilla/5.0 (Linux; Android 11; SM-T870) AppleWebKit/537.36"
+      }
+    },
+    "mobile": {
+      "iphone_12": {
+        "name": "iPhone 12",
+        "viewport": { "width": 390, "height": 844 },
+        "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15"
+      },
+      "iphone_se": {
+        "name": "iPhone SE",
+        "viewport": { "width": 375, "height": 667 },
+        "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15"
+      },
+      "pixel_5": {
+        "name": "Google Pixel 5",
+        "viewport": { "width": 393, "height": 851 },
+        "userAgent": "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36"
+      },
+      "galaxy_s21": {
+        "name": "Samsung Galaxy S21",
+        "viewport": { "width": 384, "height": 854 },
+        "userAgent": "Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36"
+      }
+    }
+  },
+  "testScenarios": {
+    "casino": {
+      "homePageLoad": {
+        "description": "Test home page loading across devices",
+        "criticalElements": ["title", "enterGamesButton", "languageSelector"],
+        "performanceThresholds": {
+          "desktop": 3000,
+          "tablet": 4000,
+          "mobile": 5000
+        }
+      },
+      "gameNavigation": {
+        "description": "Test navigation to games",
+        "flow": ["home", "games", "roulette"],
+        "interactions": ["click", "touch", "keyboard"]
+      },
+      "rouletteGame": {
+        "description": "Test roulette game functionality",
+        "gameElements": ["table", "chips", "controls"],
+        "interactions": ["chipSelection", "betPlacement", "spin"]
+      },
+      "partnerSwitching": {
+        "description": "Test partner configuration switching",
+        "partners": ["default", "partner1", "partner2"],
+        "features": ["branding", "gameAvailability", "limits"]
+      }
+    }
+  }
+}

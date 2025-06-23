@@ -1,0 +1,12 @@
+# Override file for local development
+version: '3.8'
+
+services:
+  app:
+    environment:
+      - DEBUG=*
+      - NEXT_PUBLIC_PARTNER_ID=default
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
