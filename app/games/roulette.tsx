@@ -25,6 +25,8 @@ import {
   pageTransition,
   pageVariants,
 } from '../../lib/animations';
+import { getTextDirection, useTranslation } from '../../lib/i18n';
+import { ROULETTE_CONSTANTS } from '../../constants/roulette';
 
 const RouletteGameContent: React.FC = () => {
   const phaserRef = useRef<Phaser.Game | null>(null);
@@ -34,6 +36,7 @@ const RouletteGameContent: React.FC = () => {
   const [gameLoading, setGameLoading] = useState(true);
   const [showInstructions, setShowInstructions] = useState(false);
   const isFocused = useIsFocused();
+  const { t, currentLanguage } = useTranslation();
 
   useEffect(() => {
     const startTime = performance.now();
@@ -159,6 +162,9 @@ const RouletteGameContent: React.FC = () => {
       exit="out"
       transition={pageTransition}
       className="flex-1 bg-gradient-to-br from-green-900 via-green-800 to-green-900 min-h-screen"
+      style={{
+        direction: getTextDirection(currentLanguage),
+      }}
     >
       {/* Header */}
       <motion.div
@@ -168,7 +174,7 @@ const RouletteGameContent: React.FC = () => {
         className="p-4 text-center"
       >
         <AnimatedText className="text-4xl font-bold text-yellow-400 mb-2">
-          🎰 Roulette Royale
+          {t(ROULETTE_CONSTANTS.TITLE)}
         </AnimatedText>
         <motion.div
           initial={{ width: 0 }}
@@ -183,7 +189,7 @@ const RouletteGameContent: React.FC = () => {
           onPress={() => setShowInstructions(true)}
           className="mb-4"
         >
-          📖 How to Play
+          {t(ROULETTE_CONSTANTS.HOW_TO_PLAY)}
         </AnimatedButton>
       </motion.div>
 
@@ -249,7 +255,7 @@ const RouletteGameContent: React.FC = () => {
                       className="mb-4"
                     />
                     <AnimatedText className="text-yellow-400 text-xl font-bold mb-2">
-                      Loading Roulette Table...
+                      {t(ROULETTE_CONSTANTS.LOADING_TABLE)}
                     </AnimatedText>
                     <motion.div
                       className="w-48 h-2 bg-gray-700 rounded-full overflow-hidden"
@@ -292,7 +298,7 @@ const RouletteGameContent: React.FC = () => {
               className="absolute inset-4 bg-gradient-to-br from-casino-secondary to-casino-accent rounded-xl border-2 border-casino-gold z-50 p-6 overflow-y-auto"
             >
               <AnimatedText className="text-2xl font-bold text-casino-gold mb-4 text-center">
-                🎯 How to Play Roulette
+                {t(ROULETTE_CONSTANTS.HOW_TO_PLAY_TITLE)}
               </AnimatedText>
 
               <motion.div
@@ -303,25 +309,19 @@ const RouletteGameContent: React.FC = () => {
               >
                 <div>
                   <AnimatedText className="font-bold text-yellow-400 mb-2">
-                    🎮 Basic Controls:
+                    {t(ROULETTE_CONSTANTS.BASIC_CONTROLS)}
                   </AnimatedText>
                   <AnimatedText className="text-sm">
-                    • Click "Buy chips" to purchase betting chips
-                    {'\n'}• Select chip denomination at the bottom
-                    {'\n'}• Click on betting areas to place chips
-                    {'\n'}• Click SPIN to start the round
+                    {t(ROULETTE_CONSTANTS.BASIC_CONTROLS_TEXT)}
                   </AnimatedText>
                 </div>
 
                 <div>
                   <AnimatedText className="font-bold text-yellow-400 mb-2">
-                    💰 Betting Options:
+                    {t(ROULETTE_CONSTANTS.BETTING_OPTIONS)}
                   </AnimatedText>
                   <AnimatedText className="text-sm">
-                    • Single Numbers (35:1 payout)
-                    {'\n'}• Red/Black, Even/Odd (1:1 payout)
-                    {'\n'}• Dozens, Columns (2:1 payout)
-                    {'\n'}• High/Low (1:1 payout)
+                    {t(ROULETTE_CONSTANTS.BETTING_OPTIONS_TEXT)}
                   </AnimatedText>
                 </div>
               </motion.div>
@@ -337,7 +337,7 @@ const RouletteGameContent: React.FC = () => {
                   onPress={() => setShowInstructions(false)}
                   className="w-full"
                 >
-                  Got it! Let's Play 🎰
+                  {t(ROULETTE_CONSTANTS.GOT_IT)}
                 </AnimatedButton>
               </motion.div>
             </motion.div>
@@ -353,7 +353,7 @@ const RouletteGameContent: React.FC = () => {
         className="p-4 text-center"
       >
         <AnimatedText className="text-gray-300 text-sm">
-          🎲 Responsive roulette table with smooth animations
+          {t(ROULETTE_CONSTANTS.RESPONSIVE_TABLE)}
         </AnimatedText>
         <motion.div
           animate={{
@@ -365,7 +365,7 @@ const RouletteGameContent: React.FC = () => {
           }}
         >
           <AnimatedText className="text-yellow-400 text-xs mt-1">
-            ✨ Resize your window to see the adaptive layout
+            {t(ROULETTE_CONSTANTS.RESIZE_WINDOW)}
           </AnimatedText>
         </motion.div>
       </motion.div>

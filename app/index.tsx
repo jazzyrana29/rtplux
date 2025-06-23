@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'expo-router';
 import { motion } from 'framer-motion';
 import { usePostHog } from '../contexts/PostHogProvider';
@@ -26,9 +26,14 @@ import {
   pageTransition,
   pageVariants,
 } from '../lib/animations';
+import { getTextDirection, useTranslation } from '../lib/i18n';
+import { HOME_CONSTANTS } from '../constants/home';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 function HomeScreenContent() {
   const { posthog, isInitialized } = usePostHog();
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const { t, currentLanguage, isRTL } = useTranslation();
 
   useEffect(() => {
     try {
@@ -84,7 +89,7 @@ function HomeScreenContent() {
       >
         <LoadingSpinner size={60} />
         <AnimatedText className="text-white mt-4 text-lg">
-          Loading Casino...
+          {t(HOME_CONSTANTS.LOADING_CASINO)}
         </AnimatedText>
       </AnimatedView>
     );
@@ -117,6 +122,9 @@ function HomeScreenContent() {
         initial="hidden"
         animate="visible"
         className="flex-1 justify-center items-center p-4"
+        style={{
+          direction: getTextDirection(currentLanguage),
+        }}
       >
         {/* Main Title with Typewriter Effect */}
         <motion.div
@@ -126,7 +134,7 @@ function HomeScreenContent() {
         >
           <PulsingElement>
             <AnimatedText className="text-6xl font-bold text-casino-gold mb-4 text-center">
-              🎰 RTPLUX
+              {t(HOME_CONSTANTS.TITLE)}
             </AnimatedText>
           </PulsingElement>
         </motion.div>
@@ -138,7 +146,7 @@ function HomeScreenContent() {
           transition={{ delay: 0.5 }}
         >
           <TypewriterText
-            text="Real-Time Premium Luxury Casino Experience"
+            text={t(HOME_CONSTANTS.SUBTITLE)}
             delay={800}
             speed={80}
             className="text-lg text-gray-300 mb-8 text-center"
@@ -158,9 +166,25 @@ function HomeScreenContent() {
               onPress={handleEnterGames}
               className="mb-6"
             >
-              🎮 Enter Games
+              {t(HOME_CONSTANTS.ENTER_GAMES)}
             </AnimatedButton>
           </Link>
+        </motion.div>
+
+        {/* Language Selector Button */}
+        <motion.div
+          initial={{ y: 40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 1.3, type: 'spring', stiffness: 200 }}
+        >
+          <AnimatedButton
+            variant="secondary"
+            size="md"
+            onPress={() => setShowLanguageSelector(true)}
+            className="mb-4"
+          >
+            {t(HOME_CONSTANTS.SELECT_LANGUAGE)}
+          </AnimatedButton>
         </motion.div>
 
         {/* Test Button */}
@@ -175,7 +199,7 @@ function HomeScreenContent() {
             onPress={handleTestSentry}
             className="mb-8"
           >
-            🧪 Test Sentry
+            {t(HOME_CONSTANTS.TEST_SENTRY)}
           </AnimatedButton>
         </motion.div>
 
@@ -187,10 +211,10 @@ function HomeScreenContent() {
           className="bg-casino-secondary rounded-xl p-6 shadow-xl border border-casino-accent max-w-sm"
         >
           <AnimatedText className="text-white text-center font-semibold mb-2">
-            🚧 Development Phase 0
+            {t(HOME_CONSTANTS.DEVELOPMENT_PHASE)}
           </AnimatedText>
           <AnimatedText className="text-white text-center mb-3">
-            Foundation Setup
+            {t(HOME_CONSTANTS.FOUNDATION_SETUP)}
           </AnimatedText>
           <motion.div
             initial={{ width: 0 }}
@@ -199,7 +223,7 @@ function HomeScreenContent() {
             className="bg-casino-gold h-2 rounded-full mb-3"
           />
           <AnimatedText className="text-gray-300 text-center text-sm">
-            Click "Test Sentry" to verify error tracking
+            {t(HOME_CONSTANTS.TEST_SENTRY_DESCRIPTION)}
           </AnimatedText>
         </motion.div>
 
@@ -235,6 +259,11 @@ function HomeScreenContent() {
             </motion.div>
           ))}
         </motion.div>
+        {/* Language Selector Modal */}
+        <LanguageSelector
+          isVisible={showLanguageSelector}
+          onClose={() => setShowLanguageSelector(false)}
+        />
       </AnimatedView>
     </AnimatedView>
   );

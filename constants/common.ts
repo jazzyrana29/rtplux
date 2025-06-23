@@ -1,0 +1,18 @@
+export const COMMON_CONSTANTS = {
+  CLOSE: "common.close",
+  CONFIRM: "common.confirm",
+  CANCEL: "common.cancel",
+  TOTAL: "common.total",
+  LOADING: "common.loading",
+  ERROR: "common.error",
+  SUCCESS: "common.success",
+  BACK: "common.back",
+  NEXT: "common.next",
+  SAVE: "common.save",
+  DELETE: "common.delete",
+  EDIT: "common.edit",
+  ADD: "common.add",
+  REMOVE: "common.remove",
+  YES: "common.yes",
+  NO: "common.no",
+} as const

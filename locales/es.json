@@ -1,0 +1,92 @@
+{
+  "home": {
+    "title": "RTPLUX",
+    "subtitle": "Experiencia de Casino de Lujo Premium en Tiempo Real",
+    "enterGames": "🎮 Entrar a Juegos",
+    "testSentry": "🧪 Probar Sentry",
+    "developmentPhase": "🚧 Fase de Desarrollo 0",
+    "foundationSetup": "Configuración de Base",
+    "testSentryDescription": "Haz clic en \"Probar Sentry\" para verificar el seguimiento de errores",
+    "loadingCasino": "Cargando Casino...",
+    "selectLanguage": "🌐 Idioma",
+    "languageSelection": "Seleccionar Idioma"
+  },
+  "games": {
+    "title": "🎮 Biblioteca de Juegos",
+    "roulette": {
+      "title": "🎯 Ruleta",
+      "subtitle": "Jugar Ahora",
+      "description": "Ruleta Europea Clásica con animaciones suaves"
+    },
+    "slots": {
+      "title": "🎰 Máquina Tragamonedas",
+      "subtitle": "Próximamente - Fase 2",
+      "description": "Tragamonedas multi-línea con rondas de bonificación"
+    },
+    "blackjack": {
+      "title": "🃏 Blackjack",
+      "subtitle": "Próximamente - Fase 5",
+      "description": "21 clásico con apuestas laterales"
+    },
+    "crash": {
+      "title": "📈 Crash",
+      "subtitle": "Próximamente - Fase 5",
+      "description": "Juego multiplicador de altas apuestas"
+    },
+    "comingSoon": "🚀 ¡Más Juegos Próximamente!",
+    "comingSoonDescription": "Estamos trabajando duro para traerte más juegos de casino emocionantes.",
+    "developmentProgress": "Progreso de Desarrollo: 60%"
+  },
+  "roulette": {
+    "title": "🎰 Ruleta Real",
+    "howToPlay": "📖 Cómo Jugar",
+    "loadingTable": "Cargando Mesa de Ruleta...",
+    "howToPlayTitle": "🎯 Cómo Jugar Ruleta",
+    "basicControls": "🎮 Controles Básicos:",
+    "basicControlsText": "• Haz clic en \"Comprar fichas\" para comprar fichas de apuesta\n• Selecciona la denominación de ficha en la parte inferior\n• Haz clic en las áreas de apuesta para colocar fichas\n• Haz clic en GIRAR para comenzar la ronda",
+    "bettingOptions": "💰 Opciones de Apuesta:",
+    "bettingOptionsText": "• Números Individuales (pago 35:1)\n• Rojo/Negro, Par/Impar (pago 1:1)\n• Docenas, Columnas (pago 2:1)\n• Alto/Bajo (pago 1:1)",
+    "gotIt": "¡Entendido! Vamos a Jugar 🎰",
+    "responsiveTable": "🎲 Mesa de ruleta responsiva con animaciones suaves",
+    "resizeWindow": "✨ Redimensiona tu ventana para ver el diseño adaptativo",
+    "balance": "Saldo",
+    "buyChips": "Comprar fichas",
+    "withdraw": "Retirar",
+    "resetBets": "Reiniciar Apuestas",
+    "info": "Información",
+    "spin": "GIRAR",
+    "noChipsLeft": "¡No quedan fichas de $${denomination}!",
+    "placeBet": "¡Coloca al menos una apuesta!",
+    "resetBetsSuccess": "Reiniciadas ${count} apuestas - fichas devueltas",
+    "noBetsToReset": "¡No hay apuestas para reiniciar!",
+    "hitWon": "¡Acierto! Ganaste +${amount} fichas (${bets} apuestas ganadoras)",
+    "noHits": "Sin aciertos - Número: ${number} (${color})",
+    "withdrawSuccess": "Retiradas ${amount} fichas",
+    "withdrawFailed": "Retiro fallido",
+    "noChipsToWithdraw": "No hay fichas para retirar.",
+    "purchaseFailed": "Compra fallida",
+    "errorPlacingBet": "Error al colocar apuesta",
+    "errorDuringSpin": "Error durante el giro",
+    "errorResolvingBets": "Error al resolver apuestas",
+    "errorProcessingPurchase": "Error al procesar compra",
+    "errorProcessingWithdrawal": "Error al procesar retiro"
+  },
+  "common": {
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "total": "Total",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Agregar",
+    "remove": "Quitar",
+    "yes": "Sí",
+    "no": "No"
+  }
+}

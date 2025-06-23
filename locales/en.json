@@ -1,0 +1,92 @@
+{
+  "home": {
+    "title": "RTPLUX",
+    "subtitle": "Real-Time Premium Luxury Casino Experience",
+    "enterGames": "🎮 Enter Games",
+    "testSentry": "🧪 Test Sentry",
+    "developmentPhase": "🚧 Development Phase 0",
+    "foundationSetup": "Foundation Setup",
+    "testSentryDescription": "Click \"Test Sentry\" to verify error tracking",
+    "loadingCasino": "Loading Casino...",
+    "selectLanguage": "🌐 Language",
+    "languageSelection": "Select Language"
+  },
+  "games": {
+    "title": "🎮 Game Library",
+    "roulette": {
+      "title": "🎯 Roulette",
+      "subtitle": "Play Now",
+      "description": "Classic European Roulette with smooth animations"
+    },
+    "slots": {
+      "title": "🎰 Slot Machine",
+      "subtitle": "Coming Soon - Phase 2",
+      "description": "Multi-line slots with bonus rounds"
+    },
+    "blackjack": {
+      "title": "🃏 Blackjack",
+      "subtitle": "Coming Soon - Phase 5",
+      "description": "Classic 21 with side bets"
+    },
+    "crash": {
+      "title": "📈 Crash",
+      "subtitle": "Coming Soon - Phase 5",
+      "description": "High-stakes multiplier game"
+    },
+    "comingSoon": "🚀 More Games Coming Soon!",
+    "comingSoonDescription": "We're working hard to bring you more exciting casino games.",
+    "developmentProgress": "Development Progress: 60%"
+  },
+  "roulette": {
+    "title": "🎰 Roulette Royale",
+    "howToPlay": "📖 How to Play",
+    "loadingTable": "Loading Roulette Table...",
+    "howToPlayTitle": "🎯 How to Play Roulette",
+    "basicControls": "🎮 Basic Controls:",
+    "basicControlsText": "• Click \"Buy chips\" to purchase betting chips\n• Select chip denomination at the bottom\n• Click on betting areas to place chips\n• Click SPIN to start the round",
+    "bettingOptions": "💰 Betting Options:",
+    "bettingOptionsText": "• Single Numbers (35:1 payout)\n• Red/Black, Even/Odd (1:1 payout)\n• Dozens, Columns (2:1 payout)\n• High/Low (1:1 payout)",
+    "gotIt": "Got it! Let's Play 🎰",
+    "responsiveTable": "🎲 Responsive roulette table with smooth animations",
+    "resizeWindow": "✨ Resize your window to see the adaptive layout",
+    "balance": "Balance",
+    "buyChips": "Buy chips",
+    "withdraw": "Withdraw",
+    "resetBets": "Reset Bets",
+    "info": "Info",
+    "spin": "SPIN",
+    "noChipsLeft": "No ${denomination} chips left!",
+    "placeBet": "Place at least one bet!",
+    "resetBetsSuccess": "Reset ${count} bets - chips returned",
+    "noBetsToReset": "No bets to reset!",
+    "hitWon": "Hit! Won +${amount} chips (${bets} winning bets)",
+    "noHits": "No hits - Number: ${number} (${color})",
+    "withdrawSuccess": "Withdrew ${amount} chips",
+    "withdrawFailed": "Withdrawal failed",
+    "noChipsToWithdraw": "No chips to withdraw.",
+    "purchaseFailed": "Purchase failed",
+    "errorPlacingBet": "Error placing bet",
+    "errorDuringSpin": "Error during spin",
+    "errorResolvingBets": "Error resolving bets",
+    "errorProcessingPurchase": "Error processing purchase",
+    "errorProcessingWithdrawal": "Error processing withdrawal"
+  },
+  "common": {
+    "close": "Close",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "total": "Total",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "back": "Back",
+    "next": "Next",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "remove": "Remove",
+    "yes": "Yes",
+    "no": "No"
+  }
+}

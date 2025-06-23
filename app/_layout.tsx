@@ -6,9 +6,17 @@ import { PostHogProvider } from '../contexts/PostHogProvider';
 import { initializeSentry, testSentryIntegration } from '../lib/sentry';
 import { useEffect } from 'react';
 import '../global.css';
+import { useLanguageStore } from '../stores/languageStore';
 
 export default function RootLayout() {
   useEffect(() => {
+    // Initialize language store
+    try {
+      useLanguageStore.getState().initializeLanguage();
+    } catch (error) {
+      console.error('Failed to initialize language store:', error);
+    }
+
     // Initialize Sentry as early as possible with error handling
     try {
       const success = initializeSentry();

@@ -16,6 +16,8 @@ import {
   trackPerformance,
   trackUserAction,
 } from '../lib/sentry';
+import { useLanguageStore } from '../stores/languageStore';
+import { ROULETTE_CONSTANTS } from '../constants/roulette';
 
 type BetType =
   | 'straight'
@@ -212,7 +214,7 @@ export default class RouletteScene extends Phaser.Scene {
       try {
         const { balance } = useGameStore.getState();
         this.balanceText = this.add
-          .text(20, 20, `Balance: $${balance}`, {
+          .text(20, 20, `${this.t(ROULETTE_CONSTANTS.BALANCE)}: $${balance}`, {
             fontSize: '24px',
             color: '#ffffff',
             fontStyle: 'bold',
@@ -323,6 +325,24 @@ export default class RouletteScene extends Phaser.Scene {
       });
       throw error;
     }
+  }
+
+  private t(key: string): string {
+    const { translations } = useLanguageStore.getState();
+    const keys = key.split('.');
+    let value: any = translations;
+
+    for (const k of keys) {
+      value = value?.[k];
+    }
+
+    return value || key;
+  }
+
+  private formatMessage(template: string, params: Record<string, any>): string {
+    return template.replace(/\$\{(\w+)\}/g, (match, key) => {
+      return params[key]?.toString() || match;
+    });
   }
 
   private subscribeToStoreChanges() {
@@ -673,7 +693,11 @@ export default class RouletteScene extends Phaser.Scene {
       const { chipCounts, removeChips } = useGameStore.getState();
 
       if (chipCounts[this.selectedDenom] <= 0) {
-        this.outcomeText.setText(`No $${this.selectedDenom} chips left!`);
+        this.outcomeText.setText(
+          this.formatMessage(this.t(ROULETTE_CONSTANTS.NO_CHIPS_LEFT), {
+            denomination: this.selectedDenom,
+          })
+        );
         trackUserAction('bet_placement_failed', {
           reason: 'insufficient_chips',
           denomination: this.selectedDenom,
@@ -882,14 +906,19 @@ export default class RouletteScene extends Phaser.Scene {
 
     // Buy chips button - fixed width
     this.buyBtn = this.add
-      .text(this.scale.width - 220, buttonY, 'Buy chips', {
-        fontSize: '16px',
-        color: '#ffffff',
-        backgroundColor: '#0066cc',
-        padding: { x: 12, y: 8 },
-        fixedWidth: buttonWidth,
-        align: 'center',
-      })
+      .text(
+        this.scale.width - 220,
+        buttonY,
+        this.t(ROULETTE_CONSTANTS.BUY_CHIPS),
+        {
+          fontSize: '16px',
+          color: '#ffffff',
+          backgroundColor: '#0066cc',
+          padding: { x: 12, y: 8 },
+          fixedWidth: buttonWidth,
+          align: 'center',
+        }
+      )
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.showPurchaseUI())
       .on('pointerover', () => this.buyBtn.setBackgroundColor('#0088ff'))
@@ -897,14 +926,19 @@ export default class RouletteScene extends Phaser.Scene {
 
     // Withdraw button - fixed width
     this.withdrawBtn = this.add
-      .text(this.scale.width - 110, buttonY, 'Withdraw', {
-        fontSize: '16px',
-        color: '#ffffff',
-        backgroundColor: '#00aa00',
-        padding: { x: 12, y: 8 },
-        fixedWidth: buttonWidth,
-        align: 'center',
-      })
+      .text(
+        this.scale.width - 110,
+        buttonY,
+        this.t(ROULETTE_CONSTANTS.WITHDRAW),
+        {
+          fontSize: '16px',
+          color: '#ffffff',
+          backgroundColor: '#00aa00',
+          padding: { x: 12, y: 8 },
+          fixedWidth: buttonWidth,
+          align: 'center',
+        }
+      )
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.withdrawChips())
       .on('pointerover', () => this.withdrawBtn.setBackgroundColor('#00cc00'))
@@ -912,14 +946,19 @@ export default class RouletteScene extends Phaser.Scene {
 
     // Reset bet button - fixed width
     this.resetBtn = this.add
-      .text(this.scale.width - 220, buttonY + 40, 'Reset Bets', {
-        fontSize: '16px',
-        color: '#ffffff',
-        backgroundColor: '#cc6600',
-        padding: { x: 12, y: 8 },
-        fixedWidth: buttonWidth,
-        align: 'center',
-      })
+      .text(
+        this.scale.width - 220,
+        buttonY + 40,
+        this.t(ROULETTE_CONSTANTS.RESET_BETS),
+        {
+          fontSize: '16px',
+          color: '#ffffff',
+          backgroundColor: '#cc6600',
+          padding: { x: 12, y: 8 },
+          fixedWidth: buttonWidth,
+          align: 'center',
+        }
+      )
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.resetBets())
       .on('pointerover', () => this.resetBtn.setBackgroundColor('#ff8800'))
@@ -927,14 +966,19 @@ export default class RouletteScene extends Phaser.Scene {
 
     // Info button - fixed width to match others
     this.infoBtn = this.add
-      .text(this.scale.width - 110, buttonY + 40, 'Info', {
-        fontSize: '16px',
-        color: '#ffffff',
-        backgroundColor: '#6600cc',
-        padding: { x: 12, y: 8 },
-        fixedWidth: buttonWidth,
-        align: 'center',
-      })
+      .text(
+        this.scale.width - 110,
+        buttonY + 40,
+        this.t(ROULETTE_CONSTANTS.INFO),
+        {
+          fontSize: '16px',
+          color: '#ffffff',
+          backgroundColor: '#6600cc',
+          padding: { x: 12, y: 8 },
+          fixedWidth: buttonWidth,
+          align: 'center',
+        }
+      )
       .setInteractive({ cursor: 'pointer' })
       .on('pointerup', () => this.showInfoUI())
       .on('pointerover', () => this.infoBtn.setBackgroundColor('#8800ff'))
@@ -943,7 +987,7 @@ export default class RouletteScene extends Phaser.Scene {
 
   private resetBets() {
     if (this.bets.length === 0) {
-      this.outcomeText.setText('No bets to reset!');
+      this.outcomeText.setText(this.t(ROULETTE_CONSTANTS.NO_BETS_TO_RESET));
       return;
     }
 
@@ -968,7 +1012,11 @@ export default class RouletteScene extends Phaser.Scene {
     // Clear all bets
     this.bets = [];
 
-    this.outcomeText.setText(`Reset ${betCount} bets - chips returned`);
+    this.outcomeText.setText(
+      this.formatMessage(this.t(ROULETTE_CONSTANTS.RESET_BETS_SUCCESS), {
+        count: betCount,
+      })
+    );
   }
 
   private createSpinButton() {
@@ -990,7 +1038,7 @@ export default class RouletteScene extends Phaser.Scene {
 
     try {
       if (this.bets.length === 0) {
-        this.outcomeText.setText('Place at least one bet!');
+        this.outcomeText.setText(this.t(ROULETTE_CONSTANTS.PLACE_BET));
         trackUserAction('spin_failed', { reason: 'no_bets' });
         return;
       }
@@ -1166,7 +1214,10 @@ export default class RouletteScene extends Phaser.Scene {
         }
 
         this.outcomeText.setText(
-          `Hit! Won +${totalWon} chips (${winningBets} winning bets)`
+          this.formatMessage(this.t(ROULETTE_CONSTANTS.HIT_WON), {
+            amount: totalWon,
+            bets: winningBets,
+          })
         );
 
         try {
@@ -1184,7 +1235,10 @@ export default class RouletteScene extends Phaser.Scene {
         }
       } else {
         this.outcomeText.setText(
-          `No hits - Number: ${win} (${this.getNumberColor(win)})`
+          this.formatMessage(this.t(ROULETTE_CONSTANTS.NO_HITS), {
+            number: win,
+            color: this.getNumberColor(win),
+          })
         );
       }
     } catch (error) {
@@ -1412,10 +1466,15 @@ export default class RouletteScene extends Phaser.Scene {
           const cr = await credit(total);
           if (cr.success) {
             resetChips();
-            this.outcomeText.setText(`Withdrew ${total} chips`);
-            trackUserAction('withdrawal_successful', { total });
+            this.outcomeText.setText(
+              this.formatMessage(this.t(ROULETTE_CONSTANTS.WITHDRAW_SUCCESS), {
+                amount: total,
+              })
+            );
           } else {
-            this.outcomeText.setText('Withdrawal failed');
+            this.outcomeText.setText(
+              this.t(ROULETTE_CONSTANTS.WITHDRAW_FAILED)
+            );
             trackUserAction('withdrawal_failed', {
               total,
               reason: 'credit_failed',
@@ -1426,7 +1485,9 @@ export default class RouletteScene extends Phaser.Scene {
           this.outcomeText.setText('Withdrawal failed');
         }
       } else {
-        this.outcomeText.setText('No chips to withdraw.');
+        this.outcomeText.setText(
+          this.t(ROULETTE_CONSTANTS.NO_CHIPS_TO_WITHDRAW)
+        );
         trackUserAction('withdrawal_failed', {
           total: 0,
           reason: 'no_chips',
