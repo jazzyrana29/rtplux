@@ -15,24 +15,35 @@ import {
   pageVariants,
 } from '../../lib/animations';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useFeatureFlags } from '../../hooks/useFeatureFlags';
 import { getTextDirection } from '../../lib/i18n';
 import { GAMES_CONSTANTS } from '../../constants/games';
 
 const GamesScreenComponent = () => {
   // ALL HOOKS FIRST
   const { t, currentLanguage, isReady } = useTranslation();
+  const {
+    isGameEnabled,
+    getGameConfig,
+    getBrandingConfig,
+    isInitialized: featureFlagsInitialized,
+  } = useFeatureFlags();
 
   // CONDITIONAL RENDERING ONLY AFTER ALL HOOKS
-  if (!isReady) {
+  if (!isReady || !featureFlagsInitialized) {
     return (
       <AnimatedView className="flex-1 bg-casino-primary justify-center items-center">
         <LoadingSpinner size={60} />
         <AnimatedText className="text-white mt-4 text-lg">
-          Loading translations...
+          {!isReady
+            ? 'Loading translations...'
+            : 'Loading game configuration...'}
         </AnimatedText>
       </AnimatedView>
     );
   }
+
+  const brandingConfig = getBrandingConfig();
 
   const gamesList = [
     {
@@ -40,33 +51,46 @@ const GamesScreenComponent = () => {
       title: t(GAMES_CONSTANTS.ROULETTE.TITLE),
       subtitle: t(GAMES_CONSTANTS.ROULETTE.SUBTITLE),
       description: t(GAMES_CONSTANTS.ROULETTE.DESCRIPTION),
-      available: true,
+      available: isGameEnabled('roulette'),
       href: '/games/roulette',
       color: 'from-red-600 to-red-800',
+      config: getGameConfig('roulette'),
     },
     {
       id: 'slots',
       title: t(GAMES_CONSTANTS.SLOTS.TITLE),
-      subtitle: t(GAMES_CONSTANTS.SLOTS.SUBTITLE),
+      subtitle: isGameEnabled('slots')
+        ? t(GAMES_CONSTANTS.SLOTS.SUBTITLE)
+        : 'Coming Soon - Disabled',
       description: t(GAMES_CONSTANTS.SLOTS.DESCRIPTION),
-      available: false,
+      available: isGameEnabled('slots'),
+      href: '/games/slots',
       color: 'from-purple-600 to-purple-800',
+      config: getGameConfig('slots'),
     },
     {
       id: 'blackjack',
       title: t(GAMES_CONSTANTS.BLACKJACK.TITLE),
-      subtitle: t(GAMES_CONSTANTS.BLACKJACK.SUBTITLE),
+      subtitle: isGameEnabled('blackjack')
+        ? t(GAMES_CONSTANTS.BLACKJACK.SUBTITLE)
+        : 'Coming Soon - Disabled',
       description: t(GAMES_CONSTANTS.BLACKJACK.DESCRIPTION),
-      available: false,
+      available: isGameEnabled('blackjack'),
+      href: '/games/blackjack',
       color: 'from-green-600 to-green-800',
+      config: getGameConfig('blackjack'),
     },
     {
       id: 'crash',
       title: t(GAMES_CONSTANTS.CRASH.TITLE),
-      subtitle: t(GAMES_CONSTANTS.CRASH.SUBTITLE),
+      subtitle: isGameEnabled('crash')
+        ? t(GAMES_CONSTANTS.CRASH.SUBTITLE)
+        : 'Coming Soon - Disabled',
       description: t(GAMES_CONSTANTS.CRASH.DESCRIPTION),
-      available: false,
+      available: isGameEnabled('crash'),
+      href: '/games/crash',
       color: 'from-orange-600 to-orange-800',
+      config: getGameConfig('crash'),
     },
   ];
 
@@ -132,6 +156,31 @@ const GamesScreenComponent = () => {
             </AnimatedText>
           </motion.div>
 
+          {/* Game Configuration Info */}
+          {game.config && game.available && (
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.5 + index * 0.1 }}
+              className="mt-3 p-2 bg-black bg-opacity-30 rounded text-xs"
+            >
+              <div className="flex justify-between">
+                <span className="text-gray-300">Min Bet:</span>
+                <span className="text-white">${game.config.minBet}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">Max Bet:</span>
+                <span className="text-white">${game.config.maxBet}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">Chips:</span>
+                <span className="text-white">
+                  {game.config.allowedChips.join(', ')}
+                </span>
+              </div>
+            </motion.div>
+          )}
+
           {/* Availability Indicator */}
           <motion.div
             className="absolute top-4 right-4"
@@ -149,7 +198,7 @@ const GamesScreenComponent = () => {
             }}
           >
             <View
-              className={`w-3 h-3 rounded-full ${game.available ? 'bg-green-400' : 'bg-yellow-400'}`}
+              className={`w-3 h-3 rounded-full ${game.available ? 'bg-green-400' : 'bg-red-400'}`}
             />
           </motion.div>
         </AnimatedView>
@@ -177,6 +226,7 @@ const GamesScreenComponent = () => {
       className="flex-1 bg-casino-primary"
       style={{
         direction: getTextDirection(currentLanguage),
+        backgroundColor: brandingConfig?.secondaryColor || '#1a1a2e',
       }}
     >
       <ScrollView className="flex-1">
@@ -201,14 +251,20 @@ const GamesScreenComponent = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
           >
-            <AnimatedText className="text-4xl font-bold text-casino-gold mb-2">
+            <AnimatedText
+              className="text-4xl font-bold mb-2"
+              style={{ color: brandingConfig?.primaryColor || '#ffd700' }}
+            >
               {t(GAMES_CONSTANTS.TITLE)}
             </AnimatedText>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: '100%' }}
               transition={{ delay: 0.5, duration: 1 }}
-              className="h-1 bg-gradient-to-r from-casino-gold to-transparent rounded mb-6"
+              className="h-1 rounded mb-6"
+              style={{
+                background: `linear-gradient(to right, ${brandingConfig?.primaryColor || '#ffd700'}, transparent)`,
+              }}
             />
           </motion.div>
 
@@ -228,7 +284,11 @@ const GamesScreenComponent = () => {
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 1, type: 'spring', stiffness: 150 }}
-            className="mt-8 bg-gradient-to-r from-casino-secondary to-casino-accent rounded-xl p-6 border border-casino-gold"
+            className="mt-8 rounded-xl p-6 border"
+            style={{
+              background: `linear-gradient(to right, ${brandingConfig?.secondaryColor || '#16213e'}, ${brandingConfig?.accentColor || '#0f3460'})`,
+              borderColor: brandingConfig?.primaryColor || '#ffd700',
+            }}
           >
             <motion.div
               animate={{
@@ -239,7 +299,10 @@ const GamesScreenComponent = () => {
                 repeat: Number.POSITIVE_INFINITY,
               }}
             >
-              <AnimatedText className="text-casino-gold font-bold text-xl text-center mb-2">
+              <AnimatedText
+                className="font-bold text-xl text-center mb-2"
+                style={{ color: brandingConfig?.primaryColor || '#ffd700' }}
+              >
                 {t(GAMES_CONSTANTS.COMING_SOON)}
               </AnimatedText>
             </motion.div>
@@ -249,7 +312,10 @@ const GamesScreenComponent = () => {
             </AnimatedText>
 
             <motion.div
-              className="mt-4 bg-casino-gold h-2 rounded-full"
+              className="mt-4 h-2 rounded-full"
+              style={{
+                backgroundColor: brandingConfig?.primaryColor || '#ffd700',
+              }}
               initial={{ width: 0 }}
               animate={{ width: '60%' }}
               transition={{ delay: 1.5, duration: 2 }}

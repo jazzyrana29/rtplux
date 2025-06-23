@@ -27,35 +27,59 @@ import {
   pageVariants,
 } from '../lib/animations';
 import { useTranslation } from '../hooks/useTranslation';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import { getTextDirection } from '../lib/i18n';
 import { HOME_CONSTANTS } from '../constants/home';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { FeatureFlagDebugPanel } from '@/components/FeatureFlagDebugPanel';
+import { PartnerSwitcher } from '@/components/PartnerSwitcher';
 
 function HomeScreenContent() {
   // ALL HOOKS MUST BE CALLED FIRST - BEFORE ANY CONDITIONAL LOGIC
   const { posthog, isInitialized } = usePostHog();
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const { t, currentLanguage, isRTL, isReady } = useTranslation();
+  const {
+    config,
+    partnerId,
+    isFeatureEnabled,
+    getBrandingConfig,
+    isInitialized: featureFlagsInitialized,
+  } = useFeatureFlags();
 
   // Effects must also be called unconditionally
   useEffect(() => {
-    if (!isReady || !isInitialized) return;
+    if (!isReady || !isInitialized || !featureFlagsInitialized) return;
 
     try {
       // Track screen view in Sentry
-      trackUserAction('screen_view', { screen_name: 'home' });
+      trackUserAction('screen_view', {
+        screen_name: 'home',
+        partner_id: partnerId,
+        partner_name: config?.partnerName,
+      });
 
       if (posthog) {
         // Track screen view in PostHog
         posthog.capture('screen_view', {
           screen_name: 'home',
+          partner_id: partnerId,
+          partner_name: config?.partnerName!,
           timestamp: new Date().toISOString(),
         });
       }
     } catch (error) {
       trackError(error as Error, { screen: 'home', action: 'screen_view' });
     }
-  }, [isInitialized, posthog, isReady]);
+  }, [
+    isInitialized,
+    posthog,
+    isReady,
+    featureFlagsInitialized,
+    partnerId,
+    config,
+  ]);
 
   // Event handlers
   const handleEnterGames = () => {
@@ -64,12 +88,14 @@ function HomeScreenContent() {
         from: 'home',
         to: 'games',
         action: 'enter_games_clicked',
+        partner_id: partnerId,
       });
 
       trackEvent('navigation', {
         from: 'home',
         to: 'games',
         action: 'enter_games_clicked',
+        partner_id: partnerId,
       });
     } catch (error) {
       trackError(error as Error, { action: 'enter_games_click' });
@@ -86,8 +112,11 @@ function HomeScreenContent() {
     setTimeout(() => testSentryGameError(), 2000);
   };
 
+  // Get branding configuration
+  const brandingConfig = getBrandingConfig();
+
   // CONDITIONAL RENDERING ONLY AFTER ALL HOOKS
-  if (!isReady || !isInitialized) {
+  if (!isReady || !isInitialized || !featureFlagsInitialized) {
     return (
       <AnimatedView
         initial={{ opacity: 0 }}
@@ -96,10 +125,17 @@ function HomeScreenContent() {
       >
         <LoadingSpinner size={60} />
         <AnimatedText className="text-white mt-4 text-lg">
-          {isReady
-            ? t(HOME_CONSTANTS.LOADING_CASINO)
-            : 'Loading translations...'}
+          {!isReady
+            ? 'Loading translations...'
+            : !featureFlagsInitialized
+              ? 'Loading partner configuration...'
+              : t(HOME_CONSTANTS.LOADING_CASINO)}
         </AnimatedText>
+        {partnerId && (
+          <AnimatedText className="text-gray-400 mt-2 text-sm">
+            Partner: {partnerId}
+          </AnimatedText>
+        )}
       </AnimatedView>
     );
   }
@@ -112,7 +148,25 @@ function HomeScreenContent() {
       exit="out"
       transition={pageTransition}
       className="flex-1 bg-casino-primary"
+      style={{
+        backgroundColor: brandingConfig?.secondaryColor || '#1a1a2e',
+      }}
     >
+      {/* Debug Panel Toggle (Development only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <motion.button
+          className="fixed top-4 right-4 z-30 bg-purple-600 text-white px-3 py-1 rounded text-xs"
+          onClick={() => setShowDebugPanel(true)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          🚩 Debug
+        </motion.button>
+      )}
+
+      {/* Partner Switcher (Development only) */}
+      <PartnerSwitcher />
+
       {/* Background decorative elements */}
       <FloatingElement className="absolute top-20 left-10">
         <AnimatedText className="text-6xl opacity-10">🎰</AnimatedText>
@@ -135,6 +189,23 @@ function HomeScreenContent() {
           direction: getTextDirection(currentLanguage),
         }}
       >
+        {/* Partner Branding */}
+        {config?.partnerName && (
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="mb-4"
+          >
+            <AnimatedText
+              className="text-sm text-gray-400 text-center"
+              style={{ color: brandingConfig?.accentColor || '#0f3460' }}
+            >
+              Powered by {config.partnerName}
+            </AnimatedText>
+          </motion.div>
+        )}
+
         {/* Main Title with Typewriter Effect */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
@@ -142,7 +213,10 @@ function HomeScreenContent() {
           transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
         >
           <PulsingElement>
-            <AnimatedText className="text-6xl font-bold text-casino-gold mb-4 text-center">
+            <AnimatedText
+              className="text-6xl font-bold mb-4 text-center"
+              style={{ color: brandingConfig?.primaryColor || '#ffd700' }}
+            >
               {t(HOME_CONSTANTS.TITLE)}
             </AnimatedText>
           </PulsingElement>
@@ -180,37 +254,41 @@ function HomeScreenContent() {
           </Link>
         </motion.div>
 
-        {/* Language Selector Button */}
-        <motion.div
-          initial={{ y: 40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1.3, type: 'spring', stiffness: 200 }}
-        >
-          <AnimatedButton
-            variant="secondary"
-            size="md"
-            onPress={() => setShowLanguageSelector(true)}
-            className="mb-4"
+        {/* Language Selector Button - Only if enabled */}
+        {isFeatureEnabled('ui.languageSelector') && (
+          <motion.div
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1.3, type: 'spring', stiffness: 200 }}
           >
-            {t(HOME_CONSTANTS.SELECT_LANGUAGE)}
-          </AnimatedButton>
-        </motion.div>
+            <AnimatedButton
+              variant="secondary"
+              size="md"
+              onPress={() => setShowLanguageSelector(true)}
+              className="mb-4"
+            >
+              {t(HOME_CONSTANTS.SELECT_LANGUAGE)}
+            </AnimatedButton>
+          </motion.div>
+        )}
 
-        {/* Test Button */}
-        <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1.4 }}
-        >
-          <AnimatedButton
-            variant="danger"
-            size="sm"
-            onPress={handleTestSentry}
-            className="mb-8"
+        {/* Test Button - Only if analytics enabled */}
+        {isFeatureEnabled('analytics.sentry') && (
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1.4 }}
           >
-            {t(HOME_CONSTANTS.TEST_SENTRY)}
-          </AnimatedButton>
-        </motion.div>
+            <AnimatedButton
+              variant="danger"
+              size="sm"
+              onPress={handleTestSentry}
+              className="mb-8"
+            >
+              {t(HOME_CONSTANTS.TEST_SENTRY)}
+            </AnimatedButton>
+          </motion.div>
+        )}
 
         {/* Status Card */}
         <motion.div
@@ -218,6 +296,12 @@ function HomeScreenContent() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 1.6, type: 'spring', stiffness: 150 }}
           className="bg-casino-secondary rounded-xl p-6 shadow-xl border border-casino-accent max-w-sm"
+          style={{
+            backgroundColor: brandingConfig?.secondaryColor
+              ? `${brandingConfig.secondaryColor}dd`
+              : '#16213e',
+            borderColor: brandingConfig?.accentColor || '#0f3460',
+          }}
         >
           <AnimatedText className="text-white text-center font-semibold mb-2">
             {t(HOME_CONSTANTS.DEVELOPMENT_PHASE)}
@@ -229,11 +313,23 @@ function HomeScreenContent() {
             initial={{ width: 0 }}
             animate={{ width: '75%' }}
             transition={{ delay: 2, duration: 1.5 }}
-            className="bg-casino-gold h-2 rounded-full mb-3"
+            className="h-2 rounded-full mb-3"
+            style={{
+              backgroundColor: brandingConfig?.primaryColor || '#ffd700',
+            }}
           />
           <AnimatedText className="text-gray-300 text-center text-sm">
             {t(HOME_CONSTANTS.TEST_SENTRY_DESCRIPTION)}
           </AnimatedText>
+
+          {/* Partner Info */}
+          {partnerId && (
+            <div className="mt-3 pt-3 border-t border-gray-600">
+              <AnimatedText className="text-gray-400 text-center text-xs">
+                Partner: {partnerId} | Version: {config?.version}
+              </AnimatedText>
+            </div>
+          )}
         </motion.div>
 
         {/* Floating Casino Icons */}
@@ -273,6 +369,12 @@ function HomeScreenContent() {
         <LanguageSelector
           isVisible={showLanguageSelector}
           onClose={() => setShowLanguageSelector(false)}
+        />
+
+        {/* Feature Flag Debug Panel */}
+        <FeatureFlagDebugPanel
+          isVisible={showDebugPanel}
+          onClose={() => setShowDebugPanel(false)}
         />
       </AnimatedView>
     </AnimatedView>

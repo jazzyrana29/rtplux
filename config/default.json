@@ -1,0 +1,96 @@
+{
+  "partnerId": "default",
+  "partnerName": "RTPLUX Casino",
+  "features": {
+    "roulette": {
+      "enabled": true,
+      "maxBet": 500,
+      "minBet": 1,
+      "allowedChips": [1, 5, 25, 100],
+      "specialFeatures": {
+        "autoSpin": false,
+        "quickBet": false,
+        "betHistory": true
+      }
+    },
+    "slots": {
+      "enabled": false,
+      "maxBet": 100,
+      "minBet": 1,
+      "allowedChips": [1, 5, 25],
+      "specialFeatures": {
+        "autoPlay": false,
+        "turboMode": false
+      }
+    },
+    "blackjack": {
+      "enabled": false,
+      "maxBet": 1000,
+      "minBet": 5,
+      "allowedChips": [5, 25, 100],
+      "specialFeatures": {
+        "sideBets": false,
+        "insurance": false
+      }
+    },
+    "crash": {
+      "enabled": false,
+      "maxBet": 1000,
+      "minBet": 1,
+      "allowedChips": [1, 5, 25, 100],
+      "specialFeatures": {
+        "autoCashout": false,
+        "multipleBets": false
+      }
+    },
+    "ui": {
+      "darkMode": true,
+      "animations": true,
+      "sounds": true,
+      "notifications": true,
+      "languageSelector": true,
+      "currencyDisplay": "USD",
+      "theme": "casino-gold"
+    },
+    "analytics": {
+      "posthog": false,
+      "sentry": true,
+      "customEvents": false,
+      "performanceTracking": false
+    },
+    "payments": {
+      "deposits": true,
+      "withdrawals": true,
+      "cryptoPayments": false,
+      "instantWithdrawals": false
+    },
+    "social": {
+      "chat": false,
+      "leaderboards": false,
+      "achievements": false,
+      "referrals": false
+    },
+    "limits": {
+      "dailyDepositLimit": 1000,
+      "dailyWithdrawalLimit": 500,
+      "sessionTimeLimit": 120,
+      "maxConcurrentSessions": 1
+    }
+  },
+  "branding": {
+    "primaryColor": "#ffd700",
+    "secondaryColor": "#1a1a2e",
+    "accentColor": "#0f3460",
+    "logo": "/assets/logo.png",
+    "favicon": "/assets/favicon.png",
+    "backgroundImage": null
+  },
+  "api": {
+    "baseUrl": "https://api.rtplux.com",
+    "version": "v1",
+    "timeout": 30000,
+    "retryAttempts": 3
+  },
+  "version": "1.0.0",
+  "lastUpdated": "2024-01-10T09:00:00Z"
+}

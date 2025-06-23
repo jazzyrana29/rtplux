@@ -1,0 +1,96 @@
+{
+  "partnerId": "partner1",
+  "partnerName": "Premium Casino",
+  "features": {
+    "roulette": {
+      "enabled": true,
+      "maxBet": 1000,
+      "minBet": 1,
+      "allowedChips": [1, 5, 25, 100],
+      "specialFeatures": {
+        "autoSpin": true,
+        "quickBet": true,
+        "betHistory": true
+      }
+    },
+    "slots": {
+      "enabled": false,
+      "maxBet": 500,
+      "minBet": 1,
+      "allowedChips": [1, 5, 25],
+      "specialFeatures": {
+        "autoPlay": false,
+        "turboMode": false
+      }
+    },
+    "blackjack": {
+      "enabled": false,
+      "maxBet": 2000,
+      "minBet": 5,
+      "allowedChips": [5, 25, 100, 500],
+      "specialFeatures": {
+        "sideBets": false,
+        "insurance": true
+      }
+    },
+    "crash": {
+      "enabled": false,
+      "maxBet": 10000,
+      "minBet": 1,
+      "allowedChips": [1, 5, 25, 100, 500],
+      "specialFeatures": {
+        "autoCashout": false,
+        "multipleBets": false
+      }
+    },
+    "ui": {
+      "darkMode": true,
+      "animations": true,
+      "sounds": true,
+      "notifications": true,
+      "languageSelector": true,
+      "currencyDisplay": "USD",
+      "theme": "casino-gold"
+    },
+    "analytics": {
+      "posthog": true,
+      "sentry": true,
+      "customEvents": true,
+      "performanceTracking": true
+    },
+    "payments": {
+      "deposits": true,
+      "withdrawals": true,
+      "cryptoPayments": false,
+      "instantWithdrawals": false
+    },
+    "social": {
+      "chat": false,
+      "leaderboards": false,
+      "achievements": false,
+      "referrals": false
+    },
+    "limits": {
+      "dailyDepositLimit": 5000,
+      "dailyWithdrawalLimit": 2000,
+      "sessionTimeLimit": 240,
+      "maxConcurrentSessions": 1
+    }
+  },
+  "branding": {
+    "primaryColor": "#ffd700",
+    "secondaryColor": "#1a1a2e",
+    "accentColor": "#0f3460",
+    "logo": "/assets/partners/partner1/logo.png",
+    "favicon": "/assets/partners/partner1/favicon.ico",
+    "backgroundImage": "/assets/partners/partner1/background.jpg"
+  },
+  "api": {
+    "baseUrl": "https://api.partner1.com",
+    "version": "v1",
+    "timeout": 30000,
+    "retryAttempts": 3
+  },
+  "version": "1.0.0",
+  "lastUpdated": "2024-01-15T10:30:00Z"
+}
