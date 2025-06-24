@@ -1,13 +1,18 @@
-YOUTUBE_LINK=https://www.youtube.com/@vyarna
-INSTAGRAM_LINK=https://instagram.com/vyarnasharelife
-FACEBOOK_LINK=https://www.facebook.com/vyarnabooster/
-TIKTOK_LINK=https://www.tiktok.com/@vyarna
-LINKEDIN_LINK=https://www.linkedin.com/company/vyarna/
+# Application Configuration
+APP_URL=http://localhost:8081
 
-APP_URL=http://localhost:8081/
-API_URL=https://backend-url/
+# Partner Configuration
+PARTNER_ID=partner1
 
-SENTRY_DSN=https://bebd1ed51305b7defbd8a6b9de500979@o4509403349778432.ingest.de.sentry.io/4509403361378384
-
+# PostHog Analytics
 POSTHOG_API_KEY=phc_Ogrj6W75IznmMPlYalc86o3Qv5DkY16ZcE99PC7MdB0
 POSTHOG_HOST=https://eu.i.posthog.com
+
+# Sentry Error Tracking
+SENTRY_DSN=https://bebd1ed51305b7defbd8a6b9de500979@o4509403349778432.ingest.de.sentry.io/4509403361378384
+
+# CI/CD
+CI=false
+
+# Development
+NODE_ENV=development

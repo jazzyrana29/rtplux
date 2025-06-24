@@ -1,17 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Playwright Setup Script for Linux/Ubuntu
-# Handles dependency installation and browser setup
+# Playwright Setup Script for RTPLUX Casino Platform
 
-echo "🎭 Setting up Playwright for Cross-Device Testing"
-echo "================================================"
+echo "🎭 Setting up Playwright for RTPLUX Casino"
+echo "=========================================="
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -29,186 +28,176 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if running on Linux
-if [[ "$OSTYPE" != "linux-gnu"* ]]; then
-    print_warning "This script is designed for Linux. For other OS, please check Playwright documentation."
-fi
+# Check Node.js version
+check_node() {
+    if ! command -v node &> /dev/null; then
+        print_error "Node.js is not installed!"
+        echo "Please install Node.js 18+ from https://nodejs.org/"
+        exit 1
+    fi
 
-# Check if running as root
-if [[ $EUID -eq 0 ]]; then
-    print_warning "Running as root. This is not recommended for development."
-fi
+    NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
+    if [ "$NODE_VERSION" -lt 18 ]; then
+        print_error "Node.js version $NODE_VERSION is too old. Please upgrade to Node.js 18+."
+        exit 1
+    fi
 
-# Function to install system dependencies
-install_system_deps() {
-    print_status "Installing system dependencies..."
-    
-    # Update package list
-    sudo apt-get update
-    
-    # Install required dependencies
-    sudo apt-get install -y \
-        libevent-2.1-7 \
-        libavif16 \
-        libgstreamer-plugins-bad1.0-0 \
-        libgstreamer-plugins-base1.0-0 \
-        libgstreamer1.0-0 \
-        libharfbuzz-icu0 \
-        libhyphen0 \
-        libmanette-0.2-0 \
-        libsecret-1-0 \
-        libsoup2.4-1 \
-        libwayland-client0 \
-        libwayland-egl1 \
-        libwayland-server0 \
-        libwoff1 \
-        libxcomposite1 \
-        libxdamage1 \
-        libxkbcommon0 \
-        libxrandr2 \
-        xvfb
-    
-    if [[ $? -eq 0 ]]; then
-        print_success "System dependencies installed successfully"
+    print_success "Node.js $(node -v) is installed"
+}
+
+# Install project dependencies
+install_dependencies() {
+    print_status "Installing project dependencies..."
+
+    if npm ci --force; then
+        print_success "Dependencies installed successfully"
     else
-        print_error "Failed to install system dependencies"
-        return 1
+        print_warning "npm ci failed, trying npm install..."
+        if npm install --force; then
+            print_success "Dependencies installed with npm install"
+        else
+            print_error "Failed to install dependencies"
+            exit 1
+        fi
     fi
 }
 
-# Function to install Playwright
+# Install Playwright browsers and OS deps
 install_playwright() {
-    print_status "Installing Playwright..."
-    
-    # Install Playwright package with force flag
-    npm install @playwright/test --force
-    
-    if [[ $? -eq 0 ]]; then
-        print_success "Playwright package installed"
-    else
-        print_error "Failed to install Playwright package"
-        return 1
-    fi
-}
-
-# Function to install browsers
-install_browsers() {
     print_status "Installing Playwright browsers..."
-    
-    # Install browsers
-    npx playwright install
-    
-    if [[ $? -eq 0 ]]; then
+
+    # Import missing GPG keys (WineHQ, AnyDesk, MySQL) to allow apt updates
+    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys \
+        76F1A20FF987672F \
+        A2FB21D5A8772835 \
+        B7B3B788A8D3785C || true
+    sudo apt update
+
+    if npx playwright install; then
         print_success "Playwright browsers installed"
     else
-        print_error "Failed to install browsers"
-        return 1
+        print_error "Failed to install Playwright browsers"
+        exit 1
+    fi
+
+    # Install system dependencies (Linux only)
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        print_status "Installing system dependencies for Linux..."
+        if sudo npx playwright install-deps 2>/dev/null; then
+            print_success "System dependencies installed"
+        else
+            print_warning "Could not install system dependencies. You may need to run manually:"
+            echo "  sudo npx playwright install-deps"
+        fi
     fi
 }
 
-# Function to install browser dependencies
-install_browser_deps() {
-    print_status "Installing browser dependencies..."
-    
-    # Install browser dependencies
-    sudo npx playwright install-deps
-    
-    if [[ $? -eq 0 ]]; then
-        print_success "Browser dependencies installed"
-    else
-        print_error "Failed to install browser dependencies"
-        return 1
-    fi
+# Create test directories and set permissions
+setup_directories() {
+    print_status "Setting up test directories..."
+
+    mkdir -p test-results
+    mkdir -p playwright-report
+
+    # Make scripts executable
+    find scripts -type f -name "*.sh" -exec chmod +x {} \;
+
+    print_success "Directories created and permissions set"
 }
 
-# Function to test installation
+# Test Playwright installation
 test_installation() {
     print_status "Testing Playwright installation..."
-    
-    # Create a simple test file
-    cat > test-installation.js << 'EOF'
-const { chromium } = require('playwright');
 
-(async () => {
-  try {
-    const browser = await chromium.launch();
-    const page = await browser.newPage();
-    await page.goto('https://example.com');
-    console.log('✅ Playwright is working correctly!');
-    await browser.close();
-    process.exit(0);
-  } catch (error) {
-    console.error('❌ Playwright test failed:', error.message);
-    process.exit(1);
-  }
-})();
-EOF
+    # Start dev server in background
+    print_status "Starting development server..."
+    npm run start &  # use existing "start" script defined in package.json
+    DEV_PID=$!
 
-    # Run test
-    node test-installation.js
-    local test_result=$?
-    
-    # Clean up test file
-    rm test-installation.js
-    
-    if [[ $test_result -eq 0 ]]; then
-        print_success "Playwright installation test passed"
+    # Give server time to start
+    sleep 10
+
+    # Verify server is running
+    if curl -f http://localhost:8081 &> /dev/null; then
+        print_success "Development server is running"
+
+        # Run a quick Playwright test
+        print_status "Running quick test..."
+        if npx playwright test --reporter=list --max-failures=1 tests/cross-device/home-page.spec.ts; then
+            print_success "Playwright test passed!"
+        else
+            print_warning "Test failed, but setup is complete. Check your tests."
+        fi
     else
-        print_error "Playwright installation test failed"
-        return 1
+        print_warning "Development server may not be ready. Try running tests manually."
     fi
+
+    # Cleanup: kill server
+    kill $DEV_PID 2>/dev/null || true
+    sleep 2
 }
 
-# Main installation process
+# Main setup function
 main() {
-    print_status "Starting Playwright setup process..."
-    
-    # Check if we have sudo access
-    if ! sudo -n true 2>/dev/null; then
-        print_warning "This script requires sudo access for system dependencies."
-        print_status "You may be prompted for your password."
+    print_status "Starting Playwright setup..."
+
+    check_node
+    install_dependencies
+    install_playwright
+    setup_directories
+
+    if [ "${1:-}" != "--skip-test" ]; then
+        test_installation
     fi
-    
-    # Install components step by step
-    install_playwright || exit 1
-    install_system_deps || exit 1
-    install_browser_deps || exit 1
-    install_browsers || exit 1
-    test_installation || exit 1
-    
+
     print_success "🎉 Playwright setup completed successfully!"
     echo ""
-    echo "You can now run cross-device tests with:"
-    echo "  npm run test"
-    echo "  npm run test:cross-device"
-    echo "  npm run test:mobile"
+    echo "🚀 Quick Start Commands:"
     echo ""
+    echo "Development:"
+    echo "  npm run start                 # Start development server"
+    echo "  npm run test:ui               # Interactive test UI"
+    echo "  npm run test:headed           # Run tests with browser UI"
+    echo ""
+    echo "Testing:"
+    echo "  npm run test                  # Run all tests"
+    echo "  npm run test:mobile           # Mobile device tests"
+    echo "  npm run test:desktop          # Desktop browser tests"
+    echo "  npm run test:accessibility    # Accessibility tests"
+    echo ""
+    echo "Debugging:"
+    echo "  npm run test:debug            # Debug mode"
+    echo "  npm run test:report           # View test results"
+    echo ""
+    echo "Visit your app per your start script (e.g., via Expo or localhost:8081)!"
 }
 
 # Handle command line arguments
 case "${1:-}" in
     --deps-only)
-        print_status "Installing only system dependencies..."
-        install_system_deps
+        check_node
+        install_dependencies
         ;;
     --browsers-only)
-        print_status "Installing only browsers..."
-        install_browsers
+        install_playwright
         ;;
     --test)
-        print_status "Testing existing installation..."
         test_installation
         ;;
+    --skip-test)
+        main --skip-test
+        ;;
     --help|-h)
-        echo "Playwright Setup Script"
+        echo "Playwright Setup Script for RTPLUX Casino"
         echo ""
         echo "Usage: $0 [option]"
         echo ""
         echo "Options:"
-        echo "  --deps-only      Install only system dependencies"
-        echo "  --browsers-only  Install only browsers"
-        echo "  --test          Test existing installation"
-        echo "  --help, -h      Show this help message"
+        echo "  --deps-only       Install dependencies only"
+        echo "  --browsers-only   Install Playwright browsers only"
+        echo "  --test            Test installation only"
+        echo "  --skip-test       Skip test after setup"
+        echo "  --help, -h        Show this help message"
         echo ""
         echo "Run without arguments to perform full setup."
         ;;

@@ -1,13 +1,12 @@
 #!/bin/bash
 
-# Quick setup for users who just want to run tests without full system setup
+# Quick Test Setup Script
 
-echo "🚀 Quick Playwright Test Setup"
-echo "=============================="
+echo "⚡ Quick Playwright Setup"
+echo "========================"
 
-# Colors
+# Colors for output
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
@@ -19,55 +18,19 @@ print_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
+# Quick setup
+print_status "Installing Playwright browsers..."
+npx playwright install
 
-print_status "Setting up Playwright for testing..."
+print_status "Creating test directories..."
+mkdir -p test-results playwright-report
 
-# Option 1: Try Docker approach (recommended)
-if command -v docker &> /dev/null; then
-    print_status "Docker detected. Using containerized testing approach..."
-    
-    # Make scripts executable
-    chmod +x scripts/run-tests-docker.sh
-    
-    print_success "✅ Docker setup complete!"
-    echo ""
-    echo "Run tests with:"
-    echo "  npm run test:docker"
-    echo "  npm run test:docker:mobile"
-    echo "  npm run test:docker:desktop"
-    echo ""
-    
-# Option 2: Headless mode (fallback)
-else
-    print_warning "Docker not found. Setting up headless mode..."
-    
-    # Install Playwright
-    npm install @playwright/test
-    npx playwright install chromium
-    
-    print_success "✅ Headless setup complete!"
-    echo ""
-    echo "Run tests with:"
-    echo "  npm run test:headless"
-    echo ""
-    echo "Note: Some visual tests may not work in headless mode."
-    echo "For full testing, consider installing Docker or system dependencies."
-fi
+print_status "Making scripts executable..."
+chmod +x scripts/*.sh
 
+print_success "Quick setup complete!"
 echo ""
-echo "📚 Additional Setup Options:"
-echo ""
-echo "1. Full system setup (requires sudo):"
-echo "   npm run setup:playwright"
-echo ""
-echo "2. Docker-based testing (recommended):"
-echo "   npm run test:docker"
-echo ""
-echo "3. Headless testing (limited features):"
-echo "   npm run test:headless"
-echo ""
-echo "4. Test current setup:"
-echo "   npm run setup:playwright:test"
+echo "🚀 Ready to test:"
+echo "  npm run test:ui        # Interactive UI"
+echo "  npm run test:headed    # With browser"
+echo "  npm run test          # All tests (4 workers)"

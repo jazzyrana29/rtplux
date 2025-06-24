@@ -45,3 +45,6 @@ public/assets/games
 
 #any zip
 *.zip
+
+test-results/
+playwright-report/

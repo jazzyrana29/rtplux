@@ -1,5 +1,5 @@
 import PostHog from 'posthog-react-native';
-import { POSTHOG_API_KEY, POSTHOG_HOST } from '@env';
+import { POSTHOG_HOST, POSTHOG_KEY } from '@env';
 import { __DEV__ } from './utils';
 
 let posthogInstance: PostHog | null = null;
@@ -9,7 +9,7 @@ export const initializePostHog = async (): Promise<PostHog> => {
     return posthogInstance;
   }
 
-  if (!POSTHOG_API_KEY || !POSTHOG_HOST) {
+  if (!POSTHOG_KEY || !POSTHOG_HOST) {
     console.warn('PostHog API key or host not found in environment variables');
     // Return a mock instance for development
     return {
@@ -30,7 +30,7 @@ export const initializePostHog = async (): Promise<PostHog> => {
   }
 
   try {
-    posthogInstance = new PostHog(POSTHOG_API_KEY, {
+    posthogInstance = new PostHog(POSTHOG_KEY, {
       host: POSTHOG_HOST,
       // Flush events more frequently in development
       flushAt: __DEV__ ? 1 : 20,

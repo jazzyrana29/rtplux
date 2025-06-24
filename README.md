@@ -1,29 +1,7 @@
 # 🎰 RTPLUX Casino Platform
 
-A modern, multi-partner casino platform built with Next.js, featuring real-time games, internationalization, and
-comprehensive cross-device testing.
-
-## 📋 Table of Contents
-
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [Testing Setup](#testing-setup)
-- [Docker Setup](#docker-setup)
-- [Development](#development)
-- [Partner Configuration](#partner-configuration)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-
-## ✨ Features
-
-- 🎮 **Multi-Game Platform**: Roulette, Slots, Blackjack, Crash games
-- 🌍 **Internationalization**: English, Spanish, Arabic support
-- 🏢 **Multi-Partner System**: Dynamic partner configurations
-- 📱 **Cross-Device Compatible**: Desktop, tablet, mobile optimized
-- 🎨 **Dynamic Theming**: Partner-specific branding
-- 📊 **Analytics Integration**: PostHog, Sentry tracking
-- 🧪 **Comprehensive Testing**: Playwright cross-device tests
-- 🔧 **Feature Flags**: Dynamic feature management
+A modern, cross-platform casino gaming platform built with Next.js, React Native, and Phaser.js, featuring comprehensive
+testing with Playwright.
 
 ## 🚀 Quick Start
 
@@ -31,690 +9,416 @@ comprehensive cross-device testing.
 
 - Node.js 18+
 - npm or yarn
-- Docker (recommended for testing)
 
-### Installation
-
-# Clone the repository
-
-git clone <repository-url>
-cd rtuplux-casino
-
-# Install dependencies
-
-npm install
-
-# Start development server
-
-npm run dev
-\`\`\`
-
-Visit `http://localhost:3000` to see the application.
-
-## 🧪 Testing Setup
-
-### Why Playwright Testing?
-
-Our casino platform requires rigorous cross-device testing to ensure:
-
-- ✅ Games work on all devices (desktop, tablet, mobile)
-- ✅ Partner configurations load correctly
-- ✅ Internationalization displays properly
-- ✅ Performance meets standards across devices
-- ✅ Accessibility compliance
-
-### Testing Options
-
-#### Option 1: Docker Testing (Recommended) 🐳
-
-**Why Docker?**
-
-- ✅ No host dependency issues
-- ✅ Consistent testing environment
-- ✅ Easy CI/CD integration
-- ✅ Isolated from system changes
-- ✅ Works on any operating system
+### Setup
 
 \`\`\`bash
 
-# Quick setup
+# 1. Install dependencies
 
-npm run setup:docker
+npm install --force
 
-# Run all cross-device tests
+# 2. Setup environment
 
-npm run test:docker
+cp env-example .env.local
 
-# Run specific test suites
-
-npm run test:docker:mobile
-npm run test:docker:desktop
-npm run test:docker:accessibility
-\`\`\`
-
-#### Option 2: Native Installation
-
-\`\`\`bash
-
-# Automated setup (Linux/Ubuntu)
+# 3. Setup Playwright (one-time)
 
 npm run setup:playwright
 
-# Manual setup
-
-sudo npx playwright install-deps
-npx playwright install
-
-# Run tests
-
-npm run test
-npm run test:cross-device
-npm run test:mobile
-\`\`\`
-
-#### Option 3: Headless Mode (Limited)
-
-\`\`\`bash
-
-# For CI/CD or limited environments
-
-npm run test:headless
-\`\`\`
-
-### Test Commands
-
-\`\`\`bash
-
-# All test commands
-
-npm run test # Run all tests
-npm run test:headed # Run with browser UI
-npm run test:debug # Debug mode
-npm run test:mobile # Mobile device tests
-npm run test:desktop # Desktop browser tests
-npm run test:cross-device # Cross-device compatibility
-npm run test:accessibility # Accessibility tests
-npm run test:performance # Performance tests
-npm run test:ui # Interactive test UI
-npm run test:report # View test results
-
-# Docker-based testing
-
-npm run test:docker # All tests in Docker
-npm run test:docker:mobile # Mobile tests in Docker
-npm run test:docker:desktop # Desktop tests in Docker
-\`\`\`
-
-## 🐳 Docker Setup
-
-### Why Docker is Necessary
-
-Docker is **highly recommended** for this project because:
-
-1. **Playwright Dependencies**: Requires many system libraries
-2. **Cross-Device Testing**: Needs multiple browser engines
-3. **Consistent Environment**: Same results across different machines
-4. **CI/CD Ready**: Easy integration with deployment pipelines
-5. **No System Pollution**: Keeps your system clean
-
-### Docker Installation
-
-#### Install Docker
-
-**Ubuntu/Debian:**
-\`\`\`bash
-
-# Update package index
-
-sudo apt-get update
-
-# Install Docker
-
-sudo apt-get install docker.io docker-compose
-
-# Add user to docker group (logout/login required)
-
-sudo usermod -aG docker $USER
-
-# Start Docker service
-
-sudo systemctl start docker
-sudo systemctl enable docker
-\`\`\`
-
-**macOS:**
-\`\`\`bash
-
-# Install Docker Desktop
-
-brew install --cask docker
-
-# Or download from: https://www.docker.com/products/docker-desktop
-
-\`\`\`
-
-**Windows:**
-\`\`\`bash
-
-# Download Docker Desktop from: https://www.docker.com/products/docker-desktop
-
-# Follow installation wizard
-
-\`\`\`
-
-#### Verify Docker Installation
-
-\`\`\`bash
-
-# Check Docker version
-
-docker --version
-docker-compose --version
-
-# Test Docker
-
-docker run hello-world
-\`\`\`
-
-### Project Docker Setup
-
-#### 1. Build Docker Images
-
-\`\`\`bash
-
-# Build all images
-
-docker-compose -f docker-compose.yml build
-
-# Build specific services
-
-docker-compose -f docker-compose.playwright.yml build playwright-tests
-\`\`\`
-
-#### 2. Run Development Environment
-
-\`\`\`bash
-
-# Start development environment
-
-docker-compose up -d
-
-# View logs
-
-docker-compose logs -f
-
-# Stop environment
-
-docker-compose down
-\`\`\`
-
-#### 3. Run Tests in Docker
-
-\`\`\`bash
-
-# Run all cross-device tests
-
-npm run test:docker
-
-# Run specific test suites
-
-npm run test:docker:mobile
-npm run test:docker:desktop
-
-# Run with custom configuration
-
-docker-compose -f docker-compose.playwright.yml run --rm playwright-tests npm run test:accessibility
-\`\`\`
-
-### Docker Commands Reference
-
-\`\`\`bash
-
-# Container Management
-
-docker-compose up -d # Start all services
-docker-compose down # Stop all services
-docker-compose restart # Restart services
-docker-compose logs -f [service]        # View logs
-
-# Testing Commands
-
-docker-compose -f docker-compose.playwright.yml run --rm playwright-tests npm run test
-docker-compose -f docker-compose.playwright.yml run --rm playwright-mobile
-docker-compose -f docker-compose.playwright.yml run --rm playwright-desktop
-
-# Development Commands
-
-docker-compose exec app npm install # Install new packages
-docker-compose exec app npm run build # Build application
-docker-compose exec app bash # Access container shell
-
-# Cleanup Commands
-
-docker-compose down -v # Remove containers and volumes
-docker system prune # Clean up unused Docker resources
-docker image prune # Remove unused images
-\`\`\`
-
-### Docker Troubleshooting
-
-#### Common Issues
-
-**1. Permission Denied**
-\`\`\`bash
-
-# Add user to docker group
-
-sudo usermod -aG docker $USER
-
-# Logout and login again
-
-\`\`\`
-
-**2. Port Already in Use**
-\`\`\`bash
-
-# Check what's using the port
-
-sudo lsof -i :3000
-
-# Kill the process or change port in docker-compose.yml
-
-\`\`\`
-
-**3. Out of Disk Space**
-\`\`\`bash
-
-# Clean up Docker
-
-docker system prune -a
-docker volume prune
-\`\`\`
-
-**4. Container Won't Start**
-\`\`\`bash
-
-# Check logs
-
-docker-compose logs [service-name]
-
-# Rebuild image
-
-docker-compose build --no-cache [service-name]
-\`\`\`
-
-## 🔧 Development
-
-### Environment Setup
-
-\`\`\`bash
-
-# Copy environment template
-
-cp env-example .env
-
-# Configure environment variables
-
-NEXT_PUBLIC_PARTNER_ID=default
-POSTHOG_API_KEY=your_posthog_key
-SENTRY_DSN=your_sentry_dsn
-\`\`\`
-
-### Partner Configuration
-
-\`\`\`bash
-
-# Test different partners
+# 4. Start development
 
 npm run dev
 
-# Visit: http://localhost:3000?partner=partner1
-
-# Visit: http://localhost:3000?partner=partner2
-
-# Or use subdomain (in production)
-
-# partner1.yourdomain.com
-
-# partner2.yourdomain.com
-
-\`\`\`
-
-### Development Commands
-
-\`\`\`bash
-npm run dev # Start development server
-npm run build # Build for production
-npm run start # Start production server
-npm run lint # Run ESLint
-npm run type-check # TypeScript type checking
-\`\`\`
-
-## 🧪 Test Structure
-
-### Test Categories
-
-\`\`\`
-tests/
-├── cross-device/ # Cross-device compatibility tests
-│ ├── home-page.spec.ts
-│ ├── games-page.spec.ts
-│ ├── roulette-game.spec.ts
-│ ├── accessibility.spec.ts
-│ └── performance.spec.ts
-├── utils/ # Test utilities and helpers
-│ ├── test-helpers.ts
-│ └── device-manager.ts
-└── test-data/ # Test data and configurations
-└── devices.json
-\`\`\`
-
-### Test Scenarios
-
-**Cross-Device Tests:**
-
-- ✅ Home page loading and navigation
-- ✅ Game selection and launching
-- ✅ Roulette game functionality
-- ✅ Partner switching
-- ✅ Language switching
-- ✅ Responsive design validation
-
-**Accessibility Tests:**
-
-- ✅ Keyboard navigation
-- ✅ Screen reader compatibility
-- ✅ Color contrast validation
-- ✅ ARIA labels and roles
-
-**Performance Tests:**
-
-- ✅ Page load times
-- ✅ Game loading performance
-- ✅ Memory usage monitoring
-- ✅ Network condition handling
-
-### Running Specific Tests
-
-\`\`\`bash
-
-# Run tests by tag
-
-npm run test -- --grep "@mobile"
-npm run test -- --grep "@desktop"
-npm run test -- --grep "@accessibility"
-npm run test -- --grep "@performance"
-
-# Run specific test files
-
-npm run test tests/cross-device/home-page.spec.ts
-npm run test tests/cross-device/roulette-game.spec.ts
-
-# Run tests with specific browser
-
-npm run test -- --project=chromium-desktop
-npm run test -- --project=mobile-chrome
-\`\`\`
-
-## 📊 Test Reports
-
-### Viewing Results
-
-\`\`\`bash
-
-# Generate and view HTML report
-
-npm run test:report
-
-# View test results in browser
-
-open playwright-report/index.html
-
-# View JSON results
-
-cat test-results/results.json
-\`\`\`
-
-### Test Artifacts
-
-\`\`\`
-test-results/
-├── screenshots/ # Failure screenshots
-├── videos/ # Test execution videos
-├── traces/ # Detailed execution traces
-├── results.json # JSON test results
-└── results.xml # JUnit XML results
-\`\`\`
-
-## 🚀 CI/CD Integration
-
-### GitHub Actions Example
-
-\`\`\`yaml
-name: Cross-Device Tests
-
-on: [push, pull_request]
-
-jobs:
-test:
-runs-on: ubuntu-latest
-steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
-with:
-node-version: '18'
-
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run Playwright tests
-        run: npm run test:docker
-      
-      - name: Upload test results
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-
-\`\`\`
-
-## 🏢 Partner Configuration
-
-### Adding New Partners
-
-1. Create partner config file:
-   \`\`\`bash
-   cp config/default.json config/new-partner.json
-   \`\`\`
-
-2. Update configuration:
-   \`\`\`json
-   {
-   "partnerId": "new-partner",
-   "partnerName": "New Partner Casino",
-   "features": {
-   "roulette": { "enabled": true, "maxBet": 1000 }
-   },
-   "branding": {
-   "primaryColor": "#ff6b35",
-   "logo": "/assets/partners/new-partner/logo.png"
-   }
-   }
-   \`\`\`
-
-3. Test partner configuration:
-   \`\`\`bash
-   npm run dev
-
-# Visit: http://localhost:3000?partner=new-partner
-
-\`\`\`
-
-## 🔍 Debugging
-
-### Debug Tests
-
-\`\`\`bash
-
-# Debug mode (opens browser)
-
-npm run test:debug
-
-# Debug specific test
-
-npm run test:debug tests/cross-device/home-page.spec.ts
-
-# Interactive UI mode
+# 5. Run tests
 
 npm run test:ui
 \`\`\`
 
-### Debug Application
+## 🌐 Environment Configuration
+
+### APP_URL Configuration
+
+The application URL is configurable via the `APP_URL` environment variable:
 
 \`\`\`bash
 
-# Enable debug logging
+# Local development (default)
 
-DEBUG=* npm run dev
+APP_URL=http://localhost:3000
 
-# View Sentry errors
+# Custom port
 
-npm run test:sentry
+APP_URL=http://localhost:4000
 
-# Check PostHog events
+# Production/Staging
 
-# Visit PostHog dashboard
-
+APP_URL=https://myapp.vercel.app
+APP_URL=https://staging.myapp.com
 \`\`\`
 
-## 📱 Device Testing Matrix
+### Usage Examples
 
-### Supported Devices
+\`\`\`bash
 
-**Desktop:**
+# Test with custom URL
 
-- Chrome, Firefox, Safari
-- Resolutions: 1366x768, 1920x1080, 2560x1440
+APP_URL=https://myapp.com npm run test
 
-**Tablet:**
+# Development with custom port
 
-- iPad Pro (1024x1366)
-- iPad Landscape (1366x1024)
-- Android Tablet (800x1280)
+APP_URL=http://localhost:4000 npm run dev
+APP_URL=http://localhost:4000 npm run test:ui
 
-**Mobile:**
+# CI/CD with staging URL
 
-- iPhone 12 (390x844)
-- iPhone SE (375x667)
-- Pixel 5 (393x851)
-- Galaxy S21 (384x854)
+APP_URL=https://staging.myapp.com npm run test
+\`\`\`
 
-### Test Coverage
+## 🎭 Testing with Playwright
 
-- ✅ Layout responsiveness
-- ✅ Touch interactions
-- ✅ Game functionality
-- ✅ Performance metrics
-- ✅ Accessibility compliance
+### Quick Commands
 
-## 🛠️ Troubleshooting
+\`\`\`bash
+
+# Interactive UI (recommended for development)
+
+npm run test:ui
+
+# All tests with browser UI
+
+npm run test:headed
+
+# Specific test types
+
+npm run test:mobile
+npm run test:desktop
+npm run test:accessibility
+
+# Advanced test runner
+
+npm run test:run mobile --headed
+npm run test:run accessibility
+\`\`\`
+
+### Environment-Specific Testing
+
+\`\`\`bash
+
+# Test against local development
+
+APP_URL=http://localhost:3000 npm run test
+
+# Test against staging
+
+APP_URL=https://staging.myapp.com npm run test
+
+# Test against production
+
+APP_URL=https://myapp.com npm run test:mobile
+\`\`\`
+
+### Test Configuration
+
+- **Workers**: 4 parallel workers for optimal performance
+- **Browsers**: Chromium, Firefox, WebKit
+- **Devices**: Desktop, tablet, mobile viewports
+- **Reports**: HTML, JSON, JUnit formats
+
+## 🎮 Features
+
+### Multi-Language Support (i18n)
+
+- **Languages**: English, Spanish, Arabic
+- **Implementation**: Zustand store with persistence
+- **Structure**: JSON files organized by screen
+- **Constants**: Screen-specific constant files
+
+### Partner System
+
+- **Multi-tenant**: Support for multiple casino partners
+- **Configuration**: JSON-based partner configs
+- **Feature Flags**: Partner-specific feature toggles
+- **Branding**: Customizable themes and assets
+
+### Games
+
+- **Roulette**: Full-featured roulette game with Phaser.js
+- **Cross-platform**: Web and React Native support
+- **Assets**: Optimized game assets with packing system
+
+### Testing
+
+- **Cross-device**: Comprehensive device compatibility testing
+- **Accessibility**: WCAG compliance testing
+- **Performance**: Load time and interaction testing
+- **Visual**: Screenshot comparison testing
+
+## 📁 Project Structure
+
+\`\`\`
+├── app/ # Next.js app directory
+├── components/ # Shared React components
+├── constants/ # Screen-specific constants
+├── hooks/ # Custom React hooks
+├── lib/ # Utility libraries
+├── locales/ # i18n translation files
+├── scenes/ # Phaser.js game scenes
+├── stores/ # Zustand state stores
+├── tests/ # Playwright test suites
+├── scripts/ # Build and setup scripts
+└── assets/ # Game assets and media
+\`\`\`
+
+## 🛠️ Development Workflow
+
+### 1. Start Development
+
+\`\`\`bash
+
+# Terminal 1: Development server
+
+npm run dev
+
+# Terminal 2: Interactive testing
+
+npm run test:ui
+\`\`\`
+
+### 2. Testing Workflow
+
+\`\`\`bash
+
+# Quick test during development
+
+npm run test:headed --project=chromium-desktop
+
+# Full cross-device testing
+
+npm run test:run cross-device
+
+# Accessibility testing
+
+npm run test:run accessibility
+\`\`\`
+
+### 3. Asset Management
+
+\`\`\`bash
+
+# Pack game assets
+
+npm run pack:assets
+
+# Setup permissions (if needed)
+
+npm run setup:permissions
+\`\`\`
+
+## 🔧 Scripts Reference
+
+### Setup Scripts
+
+- `setup:playwright` - Complete Playwright setup
+- `setup:quick` - Quick development setup
+- `setup:permissions` - Fix script permissions
+
+### Testing Scripts
+
+- `test` - Run all tests (4 workers)
+- `test:ui` - Interactive test UI
+- `test:headed` - Tests with browser UI
+- `test:mobile` - Mobile device tests
+- `test:desktop` - Desktop browser tests
+- `test:accessibility` - Accessibility tests
+- `test:run` - Advanced test runner
+
+### Development Scripts
+
+- `dev` - Start Next.js development server
+- `build` - Build for production
+- `start` - Start production server
+- `pack:assets` - Pack game assets
+
+## 🌍 Internationalization
+
+### Language Structure
+
+\`\`\`json
+{
+"home": {
+"welcome": "Welcome to RTPLUX",
+"selectGame": "Select a Game"
+},
+"games": {
+"roulette": "Roulette",
+"loading": "Loading..."
+}
+}
+\`\`\`
+
+### Usage
+
+\`\`\`typescript
+import { useTranslation } from '@/hooks/useTranslation'
+
+const { t } = useTranslation()
+const welcomeText = t('home.welcome')
+\`\`\`
+
+## 🎯 Testing Strategy
+
+### Cross-Device Testing
+
+- **Desktop**: 1920x1080, 1366x768, 2560x1440
+- **Tablet**: iPad Pro (portrait/landscape)
+- **Mobile**: iPhone 12, Pixel 5, Galaxy S9+
+
+### Test Categories
+
+- **Functional**: Core game functionality
+- **Visual**: UI consistency across devices
+- **Performance**: Load times and responsiveness
+- **Accessibility**: WCAG 2.1 compliance
+- **Localization**: Multi-language support
+
+### CI/CD Integration
+
+\`\`\`yaml
+
+# GitHub Actions example
+
+- name: Run Playwright Tests
+  run: |
+  APP_URL=${{ secrets.STAGING_URL }} npm run test
+  env:
+  CI: true
+  \`\`\`
+
+## 🚀 Deployment
+
+### Environment Variables
+
+\`\`\`bash
+
+# Required
+
+APP_URL=https://your-domain.com
+NEXT_PUBLIC_PARTNER_ID=partner1
+
+# Optional
+
+NEXT_PUBLIC_POSTHOG_KEY=your_key
+NEXT_PUBLIC_SENTRY_DSN=your_dsn
+\`\`\`
+
+### Build Process
+
+\`\`\`bash
+
+# Production build
+
+npm run build
+
+# Test production build
+
+APP_URL=http://localhost:3000 npm start &
+APP_URL=http://localhost:3000 npm run test
+\`\`\`
+
+## 🔍 Troubleshooting
 
 ### Common Issues
 
-**1. Playwright Installation Issues**
+#### Playwright Setup Issues
+
 \`\`\`bash
 
-# Clear cache and reinstall
+# Fix system dependencies
 
-rm -rf node_modules package-lock.json
-npm install
-npm run setup:playwright
+bash scripts/fix-system-deps.sh
+
+# Manual browser installation
+
+npx playwright install --with-deps
 \`\`\`
 
-**2. Docker Issues**
+#### Permission Errors
+
 \`\`\`bash
 
-# Restart Docker service
+# Fix script permissions
 
-sudo systemctl restart docker
+npm run setup:permissions
 
-# Clean up Docker
+# Or manually
 
-docker system prune -a
+chmod +x scripts/*.sh
 \`\`\`
 
-**3. Test Failures**
+#### Port Conflicts
+
 \`\`\`bash
 
-# Run tests with more verbose output
+# Check port usage
 
-npm run test -- --reporter=line
+lsof -i :3000
 
-# Check test artifacts
+# Use different port
+
+APP_URL=http://localhost:4000 npm run dev
+\`\`\`
+
+#### Test Failures
+
+\`\`\`bash
+
+# Debug specific test
+
+npx playwright test tests/specific-test.spec.ts --debug
+
+# Check test results
 
 ls test-results/
 \`\`\`
 
-**4. Port Conflicts**
-\`\`\`bash
+## 📊 Performance
 
-# Check what's using port 3000
+### Optimization Features
 
-lsof -i :3000
+- **4 parallel workers** for fast test execution
+- **Asset packing** for optimized game loading
+- **Lazy loading** for improved initial load times
+- **Responsive design** for all device types
 
-# Kill process
+### Monitoring
 
-kill -9 <PID>
-\`\`\`
-
-## 📚 Additional Resources
-
-- [Playwright Documentation](https://playwright.dev/)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Docker Documentation](https://docs.docker.com/)
-- [Testing Best Practices](./docs/testing-best-practices.md)
+- **PostHog**: User analytics and feature flags
+- **Sentry**: Error tracking and performance monitoring
+- **Playwright**: Automated performance testing
 
 ## 🤝 Contributing
 
+### Development Setup
+
 1. Fork the repository
-2. Create feature branch: `git checkout -b feature/new-feature`
-3. Run tests: `npm run test:docker`
-4. Commit changes: `git commit -am 'Add new feature'`
-5. Push to branch: `git push origin feature/new-feature`
+2. Create feature branch
+3. Setup environment: `npm run setup:playwright`
+4. Start development: `npm run dev`
+5. Run tests: `npm run test:ui`
 6. Submit pull request
 
-### Development Workflow
+### Testing Requirements
 
-\`\`\`bash
-
-# 1. Setup development environment
-
-npm install
-npm run setup:playwright
-
-# 2. Start development
-
-npm run dev
-
-# 3. Run tests during development
-
-npm run test:docker:mobile # Test mobile changes
-npm run test:docker:desktop # Test desktop changes
-
-# 4. Before committing
-
-npm run test:docker # Full test suite
-npm run lint # Code quality
-npm run build # Production build test
-\`\`\`
+- All new features must include tests
+- Cross-device compatibility required
+- Accessibility compliance (WCAG 2.1)
+- Performance benchmarks maintained
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ---
 
-**Happy Testing! 🎰✨**
-
-For support, please open an issue or contact the development team.
+**Built with ❤️ for the modern casino gaming experience** 🎰✨
