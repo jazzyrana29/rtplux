@@ -1,55 +1,8 @@
-// cypress/support/e2e.ts
+/// <reference types="cypress" />
 
 import './commands';
+import './types';
 import 'cypress-real-events';
-import { beforeEach, cy } from 'cypress'; // Declare cy and beforeEach variables
-
-// Load testing utilities
-declare global {
-  namespace Cypress {
-    interface Chainable {
-      // Load testing commands
-      simulateLoad(options: LoadTestOptions): Chainable<void>;
-
-      measurePerformance(label: string): Chainable<void>;
-
-      waitForStableLoad(): Chainable<void>;
-
-      checkMemoryUsage(): Chainable<void>;
-
-      simulateConcurrentUsers(userCount: number): Chainable<void>;
-
-      // Casino-specific commands
-      navigateToGame(gameType: string): Chainable<void>;
-
-      placeBet(amount: number): Chainable<void>;
-
-      spinRoulette(): Chainable<void>;
-
-      buyChips(amount: number): Chainable<void>;
-
-      // Performance monitoring
-      startPerformanceMonitoring(): Chainable<void>;
-
-      stopPerformanceMonitoring(): Chainable<PerformanceMetrics>;
-    }
-  }
-}
-
-interface LoadTestOptions {
-  users: number;
-  duration: number;
-  rampUp?: number;
-  actions?: string[];
-}
-
-interface PerformanceMetrics {
-  loadTime: number;
-  domContentLoaded: number;
-  firstContentfulPaint: number;
-  largestContentfulPaint: number;
-  memoryUsage?: number;
-}
 
 // Global error handling
 Cypress.on('uncaught:exception', (err, runnable) => {
@@ -62,7 +15,7 @@ Cypress.on('uncaught:exception', (err, runnable) => {
 // Performance monitoring setup
 beforeEach(() => {
   // Clear performance marks before each test
-  cy.window().then((win) => {
+  cy.window().then((win: Window) => {
     if (win.performance && win.performance.clearMarks) {
       win.performance.clearMarks();
       win.performance.clearMeasures();
