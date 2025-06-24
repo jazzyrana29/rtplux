@@ -27,7 +27,6 @@
     "test:run": "bash scripts/run-tests.sh",
     "test:report": "playwright show-report",
     "test:install": "playwright install --with-deps",
-    "fix:permissions": "bash scripts/fix-permissions.sh",
     "setup:permissions": "find . -name '*.sh' -exec chmod +x {} \\;"
   },
   "dependencies": {
