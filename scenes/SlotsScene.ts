@@ -131,45 +131,6 @@ export default class SlotsScene extends BaseGameScene {
     try {
       trackGameEvent('game_loaded', 'slots');
 
-      // Initialize sounds
-      this.initializeCommonSounds();
-      this.spinSound = this.sound.add('spinSound');
-      this.stopSound = this.sound.add('stopSound');
-
-      // Initialize reels with random symbols
-      this.initializeReels();
-
-      // Draw the slot machine
-      this.drawSlotMachine();
-
-      // Create common UI
-      this.createCommonUI();
-
-      // Create game-specific UI
-      this.createSlotsUI();
-
-      // Build purchase overlay (hidden)
-      this.buildPurchaseUI();
-
-      // Prepare confetti animation
-      if (this.textures.exists('confetti')) {
-        this.anims.create({
-          key: 'confettiBurst',
-          frames: this.anims.generateFrameNames('confetti', {
-            start: 0,
-            end: 59,
-            prefix: 'frame_',
-            suffix: '.png',
-            zeroPad: 3,
-          }),
-          frameRate: 30,
-          repeat: 0,
-        });
-      }
-
-      // Subscribe to store changes
-      this.subscribeToStoreChanges();
-
       const createTime = performance.now() - startTime;
       trackPerformance('slots_scene_creation', createTime);
 
