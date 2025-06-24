@@ -1,4 +1,3 @@
-import Phaser from 'phaser';
 import { useGameStore } from '../stores/gameStore';
 import { trackGameEvent } from '../lib/posthog';
 import {
@@ -7,6 +6,7 @@ import {
   trackUserAction,
 } from '../lib/sentry';
 import { BaseGameScene } from './BaseGameScene';
+import { ROULETTE_CONSTANTS } from '../constants/roulette';
 
 type SlotSymbol =
   | 'cherry'
@@ -18,53 +18,6 @@ type SlotSymbol =
   | 'seven';
 
 export default class SlotsScene extends BaseGameScene {
-  // Slots-specific sounds
-  private spinSound!: Phaser.Sound.BaseSound;
-  private stopSound!: Phaser.Sound.BaseSound;
-
-  // Game state
-  private reels: SlotSymbol[][] = [];
-  private isSpinning = false;
-  private currentBet = 1;
-  private activePaylines = 5;
-
-  // UI elements
-  private reelSprites: Phaser.GameObjects.Rectangle[][] = [];
-  private spinBtn!: Phaser.GameObjects.Text;
-  private maxBetBtn!: Phaser.GameObjects.Text;
-  private betText!: Phaser.GameObjects.Text;
-
-  // Game constants
-  private readonly REEL_COUNT = 5;
-  private readonly SYMBOL_COUNT = 3;
-  private readonly SYMBOLS: SlotSymbol[] = [
-    'cherry',
-    'lemon',
-    'orange',
-    'plum',
-    'bell',
-    'bar',
-    'seven',
-  ];
-  private readonly SYMBOL_VALUES = {
-    cherry: { 2: 2, 3: 5, 4: 10, 5: 20 },
-    lemon: { 2: 2, 3: 5, 4: 10, 5: 20 },
-    orange: { 2: 3, 3: 8, 4: 15, 5: 30 },
-    plum: { 2: 3, 3: 8, 4: 15, 5: 30 },
-    bell: { 2: 5, 3: 15, 4: 25, 5: 50 },
-    bar: { 2: 8, 3: 25, 4: 50, 5: 100 },
-    seven: { 2: 10, 3: 50, 4: 100, 5: 500 },
-  };
-
-  // Payline patterns (row indices for each reel)
-  private readonly PAYLINES = [
-    [1, 1, 1, 1, 1], // Middle row
-    [0, 0, 0, 0, 0], // Top row
-    [2, 2, 2, 2, 2], // Bottom row
-    [0, 1, 2, 1, 0], // V shape
-    [2, 1, 0, 1, 2], // Inverted V
-  ];
-
   constructor() {
     super({ key: 'SlotsScene' });
   }
@@ -82,11 +35,6 @@ export default class SlotsScene extends BaseGameScene {
         'chips',
         '/public/assets/games/common/chips.webp',
         '/public/assets/games/common/chips.json'
-      );
-      // Load spin button
-      this.load.image(
-        'spinButton',
-        '/public/assets/games/roulette/spin_button.webp'
       );
 
       // Load confetti atlas
@@ -153,6 +101,56 @@ export default class SlotsScene extends BaseGameScene {
       trackGameEvent('game_session_started', 'slots', {
         initial_balance: balance,
       });
+
+      // Draw table and calculate metrics
+      try {
+        this.drawTable();
+        trackUserAction('slots_table_drawn');
+      } catch (tableError) {
+        trackGameError(tableError as Error, 'slots', {
+          step: 'table_drawing',
+        });
+        throw tableError;
+      }
+
+      // Get balance from store and display
+      try {
+        const { balance } = useGameStore.getState();
+        this.balanceText = this.add
+          .text(20, 20, `${this.t(ROULETTE_CONSTANTS.BALANCE)}: $${balance}`, {
+            fontSize: '24px',
+            color: '#ffffff',
+            fontStyle: 'bold',
+          })
+          .setShadow(2, 2, '#000', 2);
+
+        // Outcome text - position at top left below balance
+        this.outcomeText = this.add
+          .text(20, 60, '', {
+            fontSize: '18px',
+            color: '#ffff00',
+            fontStyle: 'bold',
+          })
+          .setOrigin(0, 0);
+
+        trackUserAction('slots_ui_texts_created', { balance });
+      } catch (uiError) {
+        trackGameError(uiError as Error, 'slots', { step: 'ui_creation' });
+        throw uiError;
+      }
+
+      // Build UI controls
+      try {
+        this.createTopButtons();
+        this.drawChipPalette();
+        this.createSpinButton();
+        trackUserAction('slots_controls_created');
+      } catch (controlsError) {
+        trackGameError(controlsError as Error, 'slots', {
+          step: 'controls_creation',
+        });
+        throw controlsError;
+      }
     } catch (error) {
       trackGameError(error as Error, 'slots', {
         step: 'create_method',
@@ -161,4 +159,10 @@ export default class SlotsScene extends BaseGameScene {
       throw error;
     }
   }
+
+  protected buildInfoUI(): void {}
+
+  private createSpinButton(): void {}
+
+  private drawTable(): void {}
 }
