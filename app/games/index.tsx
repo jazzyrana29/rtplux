@@ -59,9 +59,7 @@ const GamesScreenComponent = () => {
     {
       id: 'slots',
       title: t(GAMES_CONSTANTS.SLOTS.TITLE),
-      subtitle: isGameEnabled('slots')
-        ? t(GAMES_CONSTANTS.SLOTS.SUBTITLE)
-        : 'Coming Soon - Disabled',
+      subtitle: t(GAMES_CONSTANTS.SLOTS.SUBTITLE),
       description: t(GAMES_CONSTANTS.SLOTS.DESCRIPTION),
       available: isGameEnabled('slots'),
       href: '/games/slots',

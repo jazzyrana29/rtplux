@@ -6,7 +6,12 @@
       "enabled": true,
       "maxBet": 5000,
       "minBet": 5,
-      "allowedChips": [5, 25, 100, 500],
+      "allowedChips": [
+        5,
+        25,
+        100,
+        500
+      ],
       "specialFeatures": {
         "autoSpin": true,
         "quickBet": true,
@@ -17,17 +22,29 @@
       "enabled": true,
       "maxBet": 1000,
       "minBet": 1,
-      "allowedChips": [1, 5, 25, 100],
+      "allowedChips": [
+        1,
+        5,
+        25,
+        100
+      ],
       "specialFeatures": {
         "autoPlay": true,
-        "turboMode": true
+        "turboMode": true,
+        "betHistory": true
       }
     },
     "blackjack": {
       "enabled": true,
       "maxBet": 10000,
       "minBet": 10,
-      "allowedChips": [10, 25, 100, 500, 1000],
+      "allowedChips": [
+        10,
+        25,
+        100,
+        500,
+        1000
+      ],
       "specialFeatures": {
         "sideBets": true,
         "insurance": true
@@ -37,7 +54,14 @@
       "enabled": false,
       "maxBet": 50000,
       "minBet": 1,
-      "allowedChips": [1, 5, 25, 100, 500, 1000],
+      "allowedChips": [
+        1,
+        5,
+        25,
+        100,
+        500,
+        1000
+      ],
       "specialFeatures": {
         "autoCashout": true,
         "multipleBets": true

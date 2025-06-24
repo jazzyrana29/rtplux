@@ -20,7 +20,7 @@
     },
     "slots": {
       "title": "🎰 Slot Machine",
-      "subtitle": "Coming Soon - Phase 2",
+      "subtitle": "Play Now",
       "description": "Multi-line slots with bonus rounds"
     },
     "blackjack": {
@@ -70,6 +70,38 @@
     "errorResolvingBets": "Error resolving bets",
     "errorProcessingPurchase": "Error processing purchase",
     "errorProcessingWithdrawal": "Error processing withdrawal"
+  },
+  "slots": {
+    "title": "🎰 Slot Machine Royale",
+    "balance": "Balance",
+    "totalBet": "Total Bet",
+    "credits": "Credits",
+    "buyChips": "Buy chips",
+    "withdraw": "Withdraw",
+    "resetBets": "Reset Bets",
+    "info": "Info",
+    "spin": "SPIN",
+    "maxBet": "Max Bet",
+    "noChipsLeft": "Not enough chips for this bet!",
+    "paylineWon": "Win! +${amount} chips (${lines} winning paylines)",
+    "noWins": "No wins this spin - Try again!",
+    "resetBetsSuccess": "Bet reset to minimum",
+    "withdrawSuccess": "Withdrew ${amount} chips",
+    "withdrawFailed": "Withdrawal failed",
+    "noChipsToWithdraw": "No chips to withdraw.",
+    "purchaseFailed": "Purchase failed",
+    "errorDuringSpin": "Error during spin",
+    "errorResolvingPaylines": "Error resolving paylines",
+    "errorProcessingPurchase": "Error processing purchase",
+    "errorProcessingWithdrawal": "Error processing withdrawal",
+    "howToPlayTitle": "🎰 How to Play Slots",
+    "basicControls": "🎮 Basic Controls:",
+    "basicControlsText": "• Click \"Buy chips\" to purchase betting chips\n• Select chip denomination at the bottom\n• Your bet per line equals your chip denomination\n• Click SPIN to start the reels\n• Win by matching symbols on paylines",
+    "paylinesInfo": "💰 Paylines:",
+    "paylinesInfoText": "• 5 active paylines (colored lines)\n• Match 2+ symbols from left to right\n• Total bet = Chip denomination × 5 paylines\n• Higher denominations = Higher payouts",
+    "symbolPayouts": "🎯 Symbol Payouts:",
+    "symbolPayoutsText": "• Seven (7): 20×, 50×, 100×, 500× (2-5 matches)\n• Bar: 10×, 25×, 60×, 120× (2-5 matches)\n• Bell: 5×, 15×, 40×, 80× (2-5 matches)\n• Fruits: 2×, 5×, 15×, 30× (2-5 matches)",
+    "gotIt": "Got it! Let's Spin 🎰"
   },
   "common": {
     "close": "Close",

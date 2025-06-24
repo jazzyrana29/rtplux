@@ -20,7 +20,7 @@
     },
     "slots": {
       "title": "🎰 Máquina Tragamonedas",
-      "subtitle": "Próximamente - Fase 2",
+      "subtitle": "Jugar Ahora",
       "description": "Tragamonedas multi-línea con rondas de bonificación"
     },
     "blackjack": {
@@ -70,6 +70,38 @@
     "errorResolvingBets": "Error al resolver apuestas",
     "errorProcessingPurchase": "Error al procesar compra",
     "errorProcessingWithdrawal": "Error al procesar retiro"
+  },
+  "slots": {
+    "title": "🎰 Máquina Tragamonedas Real",
+    "balance": "Saldo",
+    "totalBet": "Apuesta Total",
+    "credits": "Créditos",
+    "buyChips": "Comprar fichas",
+    "withdraw": "Retirar",
+    "resetBets": "Reiniciar Apuestas",
+    "info": "Información",
+    "spin": "GIRAR",
+    "maxBet": "Apuesta Máxima",
+    "noChipsLeft": "¡No hay suficientes fichas para esta apuesta!",
+    "paylineWon": "¡Ganaste! +${amount} fichas (${lines} líneas ganadoras)",
+    "noWins": "Sin ganancias este giro - ¡Inténtalo de nuevo!",
+    "resetBetsSuccess": "Apuesta reiniciada al mínimo",
+    "withdrawSuccess": "Retiradas ${amount} fichas",
+    "withdrawFailed": "Retiro fallido",
+    "noChipsToWithdraw": "No hay fichas para retirar.",
+    "purchaseFailed": "Compra fallida",
+    "errorDuringSpin": "Error durante el giro",
+    "errorResolvingPaylines": "Error al resolver líneas de pago",
+    "errorProcessingPurchase": "Error al procesar compra",
+    "errorProcessingWithdrawal": "Error al procesar retiro",
+    "howToPlayTitle": "🎰 Cómo Jugar Tragamonedas",
+    "basicControls": "🎮 Controles Básicos:",
+    "basicControlsText": "• Haz clic en \"Comprar fichas\" para comprar fichas de apuesta\n• Selecciona la denominación de ficha en la parte inferior\n• Tu apuesta por línea es igual a tu denominación de ficha\n• Haz clic en GIRAR para iniciar los rodillos\n• Gana haciendo coincidir símbolos en las líneas de pago",
+    "paylinesInfo": "💰 Líneas de Pago:",
+    "paylinesInfoText": "• 5 líneas de pago activas (líneas de colores)\n• Coincide 2+ símbolos de izquierda a derecha\n• Apuesta total = Denominación de ficha × 5 líneas de pago\n• Denominaciones más altas = Pagos más altos",
+    "symbolPayouts": "🎯 Pagos de Símbolos:",
+    "symbolPayoutsText": "• Siete (7): 20×, 50×, 100×, 500× (2-5 coincidencias)\n• Barra: 10×, 25×, 60×, 120× (2-5 coincidencias)\n• Campana: 5×, 15×, 40×, 80× (2-5 coincidencias)\n• Frutas: 2×, 5×, 15×, 30× (2-5 coincidencias)",
+    "gotIt": "¡Entendido! Vamos a Girar 🎰"
   },
   "common": {
     "close": "Cerrar",
