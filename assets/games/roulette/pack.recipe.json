@@ -9,27 +9,9 @@
       "maxSize": 2048
     },
     {
-      "name": "chips",
-      "sources": [
-        "chip1.png",
-        "chip5.png",
-        "chip25.png",
-        "chip100.png"
-      ],
-      "multiPage": false,
-      "maxSize": 2048
-    },
-    {
       "name": "digitAtlas",
       "sources": [
         "casino_digits_pngs/*.png"
-      ],
-      "multiPage": false
-    },
-    {
-      "name": "confetti",
-      "sources": [
-        "confetti_frames/*.png"
       ],
       "multiPage": false
     }

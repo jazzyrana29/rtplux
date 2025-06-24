@@ -1,0 +1,22 @@
+{
+  "atlases": [
+    {
+      "name": "chips",
+      "sources": [
+        "chips/*.png"
+      ],
+      "maxSize": 2048
+    },
+    {
+      "name": "confetti",
+      "sources": [
+        "confetti_frames/*.png"
+      ],
+      "multiPage": false
+    }
+  ],
+  "singles": [],
+  "audio": [
+    "audio/*.mp3"
+  ]
+}
