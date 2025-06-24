@@ -1,0 +1,16 @@
+{
+  "atlases": [
+    {
+      "name": "slotsSprites",
+      "sources": [
+        "spriteIcons/*.png"
+      ],
+      "multiPage": false,
+      "maxSize": 4096
+    }
+  ],
+  "singles": [],
+  "audio": [
+    "audio/*.mp3"
+  ]
+}

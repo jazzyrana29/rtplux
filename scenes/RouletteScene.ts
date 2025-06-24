@@ -59,7 +59,7 @@ export default class RouletteScene extends BaseGameScene {
       // Load spin button
       this.load.image(
         'spinButton',
-        '/public/assets/games/roulette/spin_button.webp'
+        '/public/assets/games/common/spin_button.webp'
       );
       // Load wheel sprites
       this.load.atlas(

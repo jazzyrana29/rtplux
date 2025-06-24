@@ -15,7 +15,9 @@
       "multiPage": false
     }
   ],
-  "singles": [],
+  "singles": [
+    "spin_button.png"
+  ],
   "audio": [
     "audio/*.mp3"
   ]
