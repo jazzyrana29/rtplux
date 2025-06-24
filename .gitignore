@@ -48,3 +48,8 @@ public/assets/games
 
 test-results/
 playwright-report/
+cypress/downloads/
+cypress/fixtures/
+cypress/reports/
+cypress/screenshots/
+cypress/videos/

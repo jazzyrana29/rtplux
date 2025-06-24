@@ -65,7 +65,7 @@ export default defineConfig({
   webServer:
     APP_URL.includes('localhost') && !CI
       ? {
-          command: 'npx expo start --web --port 8081',
+          command: 'expo start --web --port 8081',
           url: APP_URL,
           reuseExistingServer: true, // Don't kill existing Expo server
           timeout: 120 * 1000,

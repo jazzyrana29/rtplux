@@ -5,7 +5,7 @@ APP_URL=http://localhost:8081
 PARTNER_ID=partner1
 
 # PostHog Analytics
-POSTHOG_API_KEY=phc_Ogrj6W75IznmMPlYalc86o3Qv5DkY16ZcE99PC7MdB0
+POSTHOG_KEY=phc_Ogrj6W75IznmMPlYalc86o3Qv5DkY16ZcE99PC7MdB0
 POSTHOG_HOST=https://eu.i.posthog.com
 
 # Sentry Error Tracking
