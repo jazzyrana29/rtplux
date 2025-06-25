@@ -69,26 +69,12 @@ const GamesScreenComponent = () => {
     {
       id: 'blackjack',
       title: t(GAMES_CONSTANTS.BLACKJACK.TITLE),
-      subtitle: isGameEnabled('blackjack')
-        ? t(GAMES_CONSTANTS.BLACKJACK.SUBTITLE)
-        : 'Coming Soon - Disabled',
+      subtitle: t(GAMES_CONSTANTS.BLACKJACK.SUBTITLE),
       description: t(GAMES_CONSTANTS.BLACKJACK.DESCRIPTION),
       available: isGameEnabled('blackjack'),
       href: '/games/blackjack',
       color: 'from-green-600 to-green-800',
       config: getGameConfig('blackjack'),
-    },
-    {
-      id: 'crash',
-      title: t(GAMES_CONSTANTS.CRASH.TITLE),
-      subtitle: isGameEnabled('crash')
-        ? t(GAMES_CONSTANTS.CRASH.SUBTITLE)
-        : 'Coming Soon - Disabled',
-      description: t(GAMES_CONSTANTS.CRASH.DESCRIPTION),
-      available: isGameEnabled('crash'),
-      href: '/games/crash',
-      color: 'from-orange-600 to-orange-800',
-      config: getGameConfig('crash'),
     },
   ];
 

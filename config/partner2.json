@@ -47,7 +47,8 @@
       ],
       "specialFeatures": {
         "sideBets": true,
-        "insurance": true
+        "insurance": true,
+        "betHistory": true
       }
     },
     "crash": {

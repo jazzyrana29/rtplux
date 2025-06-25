@@ -34,7 +34,7 @@
       }
     },
     "blackjack": {
-      "enabled": false,
+      "enabled": true,
       "maxBet": 1000,
       "minBet": 5,
       "allowedChips": [
@@ -44,22 +44,8 @@
       ],
       "specialFeatures": {
         "sideBets": false,
-        "insurance": false
-      }
-    },
-    "crash": {
-      "enabled": false,
-      "maxBet": 1000,
-      "minBet": 1,
-      "allowedChips": [
-        1,
-        5,
-        25,
-        100
-      ],
-      "specialFeatures": {
-        "autoCashout": false,
-        "multipleBets": false
+        "insurance": false,
+        "betHistory": true
       }
     },
     "ui": {

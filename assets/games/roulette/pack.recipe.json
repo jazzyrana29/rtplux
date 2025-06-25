@@ -7,13 +7,6 @@
       ],
       "multiPage": false,
       "maxSize": 2048
-    },
-    {
-      "name": "digitAtlas",
-      "sources": [
-        "casino_digits_pngs/*.png"
-      ],
-      "multiPage": false
     }
   ],
   "singles": [],

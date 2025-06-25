@@ -40,7 +40,11 @@ export type BetType =
   | 'diagonal2'
   | 'corners'
   | 'center_cross'
-  | 'outer_frame';
+  | 'outer_frame'
+  // BlackJack bet types (if needed)
+  | 'main_bet'
+  | 'insurance_bet'
+  | 'side_bet';
 
 type Bet = {
   number?: number;

@@ -1,0 +1,50 @@
+{
+  "atlases": [
+    {
+      "name": "spadesAtlas",
+      "sources": [
+        "spades/*.png"
+      ],
+      "maxSize": 8192,
+      "multiPage": false
+    },
+    {
+      "name": "clubsAtlas",
+      "sources": [
+        "clubs/*.png"
+      ],
+      "maxSize": 8192,
+      "multiPage": false
+    },
+    {
+      "name": "heartsAtlas",
+      "sources": [
+        "hearts/*.png"
+      ],
+      "maxSize": 8192,
+      "multiPage": false
+    },
+    {
+      "name": "diamondsAtlas",
+      "sources": [
+        "diamonds/*.png"
+      ],
+      "maxSize": 8192,
+      "multiPage": false
+    },
+    {
+      "name": "jokersAtlas",
+      "sources": [
+        "jokers/*.png"
+      ],
+      "maxSize": 2048,
+      "multiPage": false
+    }
+  ],
+  "singles": [
+    "cardBack.png"
+  ],
+  "audio": [
+    "audio/*.mp3"
+  ]
+}

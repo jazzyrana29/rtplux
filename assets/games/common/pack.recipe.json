@@ -13,10 +13,18 @@
         "confetti_frames/*.png"
       ],
       "multiPage": false
+    },
+    {
+      "name": "digitAtlas",
+      "sources": [
+        "casino_digits_pngs/*.png"
+      ],
+      "multiPage": false
     }
   ],
   "singles": [
-    "spin_button.png"
+    "spin_button.png",
+    "startButton.png"
   ],
   "audio": [
     "audio/*.mp3"

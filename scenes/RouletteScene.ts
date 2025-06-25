@@ -76,8 +76,8 @@ export default class RouletteScene extends BaseGameScene {
       // Load digits atlas for result display (optimized assets)
       this.load.atlas(
         'digits',
-        '/public/assets/games/roulette/digitAtlas.png',
-        '/public/assets/games/roulette/digitAtlas.json'
+        '/public/assets/games/common/digitAtlas.webp',
+        '/public/assets/games/common/digitAtlas.json'
       );
       // Load sounds
       this.load.audio(
