@@ -16,6 +16,7 @@ import { COMMON_CONSTANTS } from '../constants/common';
 import i18n from '../lib/i18n';
 
 export type BetType =
+  // Roulette bet types
   | 'straight'
   | 'red'
   | 'black'
@@ -28,7 +29,18 @@ export type BetType =
   | 'dozen3'
   | 'column1'
   | 'column2'
-  | 'column3';
+  | 'column3'
+  // Slots bet types
+  | 'line1'
+  | 'line2'
+  | 'line3'
+  | 'line4'
+  | 'line5'
+  | 'diagonal1'
+  | 'diagonal2'
+  | 'corners'
+  | 'center_cross'
+  | 'outer_frame';
 
 type Bet = {
   number?: number;
